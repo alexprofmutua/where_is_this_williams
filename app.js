@@ -5,6 +5,7 @@ let appData = { settings: {}, questions: [] };
 let activePlayer = null;
 let currentQuestionIndex = 0;
 let timerId = null;
+let resendTimerId = null;
 
 const introScreen = document.querySelector("#intro-screen");
 const quizScreen = document.querySelector("#quiz-screen");
@@ -22,6 +23,7 @@ const playerStatus = document.querySelector("#player-status");
 const verifyForm = document.querySelector("#verify-form");
 const verifyCodeInput = document.querySelector("#verify-code-input");
 const verifyStatus = document.querySelector("#verify-status");
+const resendCodeButton = document.querySelector("#resend-code-button");
 const profileCard = document.querySelector("#profile-card");
 const profileAvatar = document.querySelector("#profile-avatar");
 const profileName = document.querySelector("#profile-name");
@@ -57,6 +59,7 @@ async function init() {
 function bindEvents() {
   playerForm?.addEventListener("submit", savePlayer);
   verifyForm?.addEventListener("submit", verifyPlayer);
+  resendCodeButton?.addEventListener("click", resendVerificationCode);
   document.querySelectorAll("[data-avatar]").forEach((button) => {
     button.addEventListener("click", () => saveAvatar(button.dataset.avatar));
   });
@@ -108,6 +111,7 @@ function syncPlayerView() {
     profileCard.classList.add("hidden");
     verifyForm?.classList.add("hidden");
     verifyStatus?.classList.add("hidden");
+    stopResendCountdown();
     startButton.disabled = true;
     playerStatus.textContent = "Save your player profile before guessing.";
     return;
@@ -125,6 +129,7 @@ function syncPlayerView() {
     : `Profile saved for ${activePlayer.email}. Verify before voting.`;
   verifyForm?.classList.toggle("hidden", activePlayer.verified);
   verifyStatus?.classList.toggle("hidden", activePlayer.verified);
+  syncResendButton();
   renderProfile();
 }
 
@@ -149,6 +154,52 @@ function showVerificationMessage(message) {
   if (!verifyStatus) return;
   verifyStatus.classList.remove("hidden");
   verifyStatus.textContent = message;
+}
+
+async function resendVerificationCode() {
+  if (!activePlayer || !resendCodeButton) return;
+
+  resendCodeButton.disabled = true;
+  try {
+    const { player } = await apiPost("/api/resend-verification", { unix: activePlayer.unix });
+    activePlayer = player;
+    showVerificationMessage(player.verificationCode ? `New testing code: ${player.verificationCode}` : "Code resent. Check your Williams email.");
+    syncResendButton();
+  } catch (error) {
+    showVerificationMessage(error.message);
+    syncResendButton();
+  }
+}
+
+function syncResendButton() {
+  if (!resendCodeButton) return;
+  stopResendCountdown();
+
+  if (!activePlayer || activePlayer.verified) {
+    resendCodeButton.disabled = true;
+    resendCodeButton.textContent = "Resend code";
+    return;
+  }
+
+  updateResendButton();
+  resendTimerId = window.setInterval(updateResendButton, 1000);
+}
+
+function updateResendButton() {
+  if (!resendCodeButton || !activePlayer) return;
+  const sentAt = new Date(activePlayer.verificationSentAt || 0).getTime();
+  const secondsLeft = Math.max(0, Math.ceil((sentAt + 60000 - Date.now()) / 1000));
+
+  resendCodeButton.disabled = secondsLeft > 0;
+  resendCodeButton.textContent = secondsLeft > 0 ? `Resend code in ${secondsLeft}s` : "Resend code";
+
+  if (secondsLeft === 0) stopResendCountdown();
+}
+
+function stopResendCountdown() {
+  if (!resendTimerId) return;
+  window.clearInterval(resendTimerId);
+  resendTimerId = null;
 }
 
 function renderProfile() {

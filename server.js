@@ -86,14 +86,16 @@ async function handleApi(req, res, url) {
   if (req.method === "POST" && url.pathname === "/api/players") {
     const player = normalizePlayer(await readJson(req));
     const existingPlayer = db.players[player.unix];
-    const verificationCode = existingPlayer?.verified && existingPlayer.email === player.email
-      ? existingPlayer.verificationCode
-      : createVerificationCode();
+    const keepsVerification = existingPlayer?.verified && existingPlayer.email === player.email;
+    const verificationCode = keepsVerification ? existingPlayer.verificationCode : createVerificationCode();
     db.players[player.unix] = {
       ...existingPlayer,
       ...player,
-      verified: Boolean(existingPlayer?.verified && existingPlayer.email === player.email),
+      verified: Boolean(keepsVerification),
       verificationCode,
+      verificationSentAt: keepsVerification
+        ? existingPlayer.verificationSentAt
+        : new Date().toISOString(),
     };
     await writeDb(db);
     sendJson(res, 200, { player: publicPlayer(db.players[player.unix]) });
@@ -103,6 +105,24 @@ async function handleApi(req, res, url) {
   if (req.method === "GET" && url.pathname.startsWith("/api/players/")) {
     const unix = decodeURIComponent(url.pathname.split("/").at(-1)).toLowerCase();
     sendJson(res, 200, { player: db.players[unix] ? publicPlayer(db.players[unix]) : null });
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/resend-verification") {
+    const body = await readJson(req);
+    const unix = String(body.unix || "").trim().toLowerCase();
+    const player = db.players[unix];
+
+    if (!player) throw httpError(404, "Player not found.");
+    if (player.verified) throw httpError(400, "This player is already verified.");
+
+    const secondsLeft = secondsUntilResend(player);
+    if (secondsLeft > 0) throw httpError(429, `Please wait ${secondsLeft}s before requesting another code.`);
+
+    player.verificationCode = createVerificationCode();
+    player.verificationSentAt = new Date().toISOString();
+    await writeDb(db);
+    sendJson(res, 200, { player: publicPlayer(player) });
     return;
   }
 
@@ -284,12 +304,19 @@ function publicPlayer(player) {
     avatar: player.avatar,
     avatarImage: player.avatarImage,
     verified: Boolean(player.verified),
+    verificationSentAt: player.verificationSentAt,
     verificationCode: process.env.NODE_ENV === "production" ? undefined : player.verificationCode,
   };
 }
 
 function createVerificationCode() {
   return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+function secondsUntilResend(player) {
+  const sentAt = new Date(player.verificationSentAt || 0).getTime();
+  if (!sentAt) return 0;
+  return Math.max(0, Math.ceil((sentAt + 60000 - Date.now()) / 1000));
 }
 
 function normalizeQuestion(body) {
