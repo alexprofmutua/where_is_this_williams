@@ -9,6 +9,8 @@ const dbPath = path.join(__dirname, "data", "db.json");
 const rankingCsvPath = path.join(__dirname, "assests", "spring26-ranking.csv");
 const port = Number(process.env.PORT || 3000);
 const adminToken = process.env.ADMIN_TOKEN || "change-me";
+const resendApiKey = process.env.RESEND_API_KEY || "";
+const emailFrom = process.env.EMAIL_FROM || "Where Is This Williams <onboarding@resend.dev>";
 
 const mimeTypes = {
   ".avif": "image/avif",
@@ -98,6 +100,7 @@ async function handleApi(req, res, url) {
         : new Date().toISOString(),
     };
     await writeDb(db);
+    if (!keepsVerification) await sendVerificationEmail(db.players[player.unix]);
     sendJson(res, 200, { player: publicPlayer(db.players[player.unix]) });
     return;
   }
@@ -122,6 +125,7 @@ async function handleApi(req, res, url) {
     player.verificationCode = createVerificationCode();
     player.verificationSentAt = new Date().toISOString();
     await writeDb(db);
+    await sendVerificationEmail(player);
     sendJson(res, 200, { player: publicPlayer(player) });
     return;
   }
@@ -317,6 +321,33 @@ function secondsUntilResend(player) {
   const sentAt = new Date(player.verificationSentAt || 0).getTime();
   if (!sentAt) return 0;
   return Math.max(0, Math.ceil((sentAt + 60000 - Date.now()) / 1000));
+}
+
+async function sendVerificationEmail(player) {
+  if (!resendApiKey) {
+    if (process.env.NODE_ENV === "production") throw httpError(500, "Email service is not configured.");
+    return;
+  }
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${resendApiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: emailFrom,
+      to: [player.email],
+      subject: "Your Where Is This Williams verification code",
+      text: `Your Where Is This Williams verification code is ${player.verificationCode}.`,
+      html: `<p>Your Where Is This Williams verification code is <strong>${player.verificationCode}</strong>.</p>`,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw httpError(response.status, error.message || "Verification email could not be sent.");
+  }
 }
 
 function normalizeQuestion(body) {

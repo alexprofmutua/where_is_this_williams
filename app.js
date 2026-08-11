@@ -99,6 +99,8 @@ async function savePlayer(event) {
   syncPlayerView();
   if (player.verificationCode) {
     showVerificationMessage(`Testing code: ${player.verificationCode}`);
+  } else if (!player.verified) {
+    showVerificationMessage(`Verification code sent to ${player.email}.`);
   }
   await renderPageData();
 }
