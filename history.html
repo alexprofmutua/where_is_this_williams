@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voting History | Where is this Williams College</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="about-site">
+        <a href="index.html" class="site-logo" aria-label="Where is this Williams home">
+            <img src="assests/photos/williamscollegelogo.avif" alt="Williams College" />
+        </a>
+
+        <nav class="site-nav" aria-label="Main navigation">
+            <a href="leaderboard.html">Leaderboard</a>
+            <a href="history.html" aria-current="page">History</a>
+            <a href="podium.html">Podium of champions</a>
+            <a href="index.html#about">About</a>
+        </nav>
+    </header>
+
+    <main class="app-shell">
+        <section class="dashboard-panel page-panel" id="history">
+            <div>
+                <p class="eyebrow">Voting History</p>
+                <h1>Your full answer table</h1>
+                <p class="page-copy">
+                    Every saved vote for the current player, including guesses, correct locations, bonus points, and totals.
+                </p>
+            </div>
+            <div class="table-wrap">
+                <table class="history-table" id="history-table">
+                    <thead>
+                        <tr>
+                            <th>Photo</th>
+                            <th>Your guess</th>
+                            <th>Correct location</th>
+                            <th>Result</th>
+                            <th>Base</th>
+                            <th>Bonus</th>
+                            <th>Total</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-table-body"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+    <script src="app.js"></script>
+</body>
+</html>

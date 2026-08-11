@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Where is this Williams College</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="about-site">
+        <a href="#" class="site-logo" aria-label="Where is this Williams home">
+            <img src="assests/photos/williamscollegelogo.avif" alt="Williams College" />
+        </a>
+        
+        <nav class="site-nav" aria-label="Main navigation">
+            <a href="leaderboard.html">Leaderboard</a>
+            <a href="history.html">History</a>
+            <a href="podium.html">Podium of champions</a>
+            <a href="#about">About</a>
+        </nav>
+    </header>
+
+    <main class="app-shell">
+        <section class="intro" id="intro-screen">
+            <img
+                class="intro-brand"
+                src="assests/photos/potential-logo.png"
+                alt="Where Is This Williams College"
+            />
+            <div class="intro-content">
+                <p class="eyebrow">Williams College guess the location</p>
+                <h1>Where is this?</h1>
+                <p class="intro-copy">
+                    Guess the campus location before the photo deadline closes. Correct answers earn points after the reveal.
+                </p>
+                <form class="player-card" id="player-form">
+                    <label>
+                        Williams Unix
+                        <input id="unix-input" name="unix" type="text" autocomplete="username" required />
+                    </label>
+                    <label>
+                        Williams email
+                        <input id="email-input" name="email" type="email" autocomplete="email" placeholder="abc1@williams.edu" required />
+                    </label>
+                    <label>
+                        Real name
+                        <input id="real-name-input" name="realName" type="text" autocomplete="name" required />
+                    </label>
+                    <label>
+                        Screen name
+                        <input id="screen-name-input" name="screenName" type="text" required />
+                    </label>
+                    <button class="primary-button" type="submit">Save Player</button>
+                </form>
+                <p class="player-status" id="player-status">Save your player profile before guessing.</p>
+                <form class="verify-card hidden" id="verify-form">
+                    <label>
+                        Verification code
+                        <input id="verify-code-input" type="text" inputmode="numeric" autocomplete="one-time-code" required />
+                    </label>
+                    <button class="primary-button" type="submit">Verify Profile</button>
+                </form>
+                <p class="player-status hidden" id="verify-status"></p>
+                <section class="profile-card hidden" id="profile-card" aria-label="Player profile">
+                    <div class="profile-avatar" id="profile-avatar">WC</div>
+                    <div>
+                        <p class="eyebrow">Player Profile</p>
+                        <strong id="profile-name">Screen name</strong>
+                        <span id="profile-meta">Williams Unix</span>
+                    </div>
+                    <div class="avatar-tools">
+                        <div class="avatar-options" aria-label="Choose a profile avatar">
+                            <button type="button" data-avatar="💜">💜</button>
+                            <button type="button" data-avatar="🏔️">🏔️</button>
+                            <button type="button" data-avatar="📍">📍</button>
+                            <button type="button" data-avatar="🎓">🎓</button>
+                            <button type="button" data-avatar="🐄">🐄</button>
+                            <button type="button" data-avatar="🌲">🌲</button>
+                        </div>
+                        <label class="avatar-upload">
+                            Upload Picture
+                            <input id="avatar-upload" type="file" accept="image/*" />
+                        </label>
+                    </div>
+                </section>
+                <button class="secondary-button" id="reminder-button" type="button">Enable Vote Reminders</button>
+                <p class="player-status" id="reminder-status">Get a browser reminder when the next photo is posted.</p>
+                <button class="primary-button" id="start-button" type="button">Start Guessing</button>
+            </div>
+        </section>
+
+        <section class="quiz hidden" id="quiz-screen" aria-live="polite">
+            <header class="quiz-topbar">
+
+                <div>
+                    <p class="label">Questions</p>
+                    <strong id="question-count"> 1 / 6</strong>
+                </div>
+
+                <div class="score-pill">
+                    <span>Score</span>
+                    <strong id="score">0</strong>
+                </div>
+
+                <div>
+                    <p class="label">Deadline</p>
+                    <strong id="timer">5</strong>
+                </div>
+
+            </header>
+
+            <figure class="photo-card">
+                <img src="" alt="Williams College location to guess" id="quiz-photo" />
+                <figcaption id="photo-caption">Choose the matching location.</figcaption>
+            </figure>
+
+            <div class="answers" id="answers"></div>
+        </section>
+
+        <section class="results hidden" id="results-screen">
+            <p class="eyebrow">Final score</p>
+            <h2 id="final-score">0 points</h2>
+            <p id="results-message"></p>
+            <button class="primary-button" id="restart-button" type="button">Go to dashboard</button>
+        </section>
+
+        <section class="about-panel" id="about">
+            <p class="eyebrow">About</p>
+            <h2>Made for the Purple Valley.</h2>
+            <p>
+                Created by a Williams College student, this game brings back memories for alumni, current
+                students, and community members while testing how well they know the Purple Valley. Every
+                correct guess earns 10 points, rankings update as players score, and the top three players
+                can be rewarded at the end of each term, starting with Spring '26.
+            </p>
+            <div class="about-points" aria-label="Game highlights">
+                <span>10 points per correct guess</span>
+                <span>Spring '26 ranking</span>
+                <span>Top 3 rewards</span>
+            </div>
+        </section>
+    </main>
+    <script src="app.js"></script>
+</body>
+</html>

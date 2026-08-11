@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-label="Placeholder photo 3">
+  <rect width="1200" height="675" fill="#6a4c93"/>
+  <rect y="480" width="1200" height="195" fill="#e8dcc8"/>
+  <rect x="260" y="190" width="680" height="300" fill="#f8f5ef"/>
+  <polygon points="220,190 600,70 980,190" fill="#f3c44d"/>
+  <rect x="540" y="315" width="120" height="175" fill="#202124"/>
+  <text x="70" y="100" fill="#ffffff" font-family="Arial, sans-serif" font-size="48" font-weight="700">Photo 3 placeholder</text>
+</svg>

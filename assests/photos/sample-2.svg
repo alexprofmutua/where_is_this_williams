@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-label="Placeholder photo 2">
+  <rect width="1200" height="675" fill="#177245"/>
+  <circle cx="930" cy="150" r="92" fill="#f3c44d"/>
+  <rect y="430" width="1200" height="245" fill="#d8d1c0"/>
+  <path d="M170 430 L600 170 L1030 430 Z" fill="#ffffff"/>
+  <rect x="290" y="340" width="620" height="150" fill="#4b2480"/>
+  <text x="70" y="100" fill="#ffffff" font-family="Arial, sans-serif" font-size="48" font-weight="700">Photo 2 placeholder</text>
+</svg>

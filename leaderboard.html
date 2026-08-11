@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard | Where is this Williams College</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="about-site">
+        <a href="index.html" class="site-logo" aria-label="Where is this Williams home">
+            <img src="assests/photos/williamscollegelogo.avif" alt="Williams College" />
+        </a>
+
+        <nav class="site-nav" aria-label="Main navigation">
+            <a href="leaderboard.html" aria-current="page">Leaderboard</a>
+            <a href="history.html">History</a>
+            <a href="podium.html">Podium of champions</a>
+            <a href="index.html#about">About</a>
+        </nav>
+    </header>
+
+    <main class="app-shell">
+        <section class="dashboard-panel page-panel" id="leaderboard">
+            <div>
+                <p class="eyebrow">Leaderboard</p>
+                <h1>Spring '26 ranking</h1>
+            </div>
+            <div class="table-wrap">
+                <table class="history-table leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Username</th>
+                            <th>Total</th>
+                            <th><span class="location-head"><img src="assests/photos/sample-1.svg" alt="" />Tony's Sombrero</span></th>
+                            <th><span class="location-head"><img src="assests/photos/sample-2.svg" alt="" />Wachenheim Center</span></th>
+                            <th><span class="location-head"><img src="assests/photos/sample-3.svg" alt="" />Tunnel City Building</span></th>
+                            <th><span class="location-head"><img src="assests/photos/sample-4.svg" alt="" />Mission House</span></th>
+                            <th><span class="location-head"><img src="assests/photos/sample-5.svg" alt="" />Schapiro Hall</span></th>
+                            <th><span class="location-head"><img src="assests/photos/sample-6.svg" alt="" />Sawyer Library</span></th>
+                            <th><span class="location-head"><img src="assests/photos/potential-logo.png" alt="" />Prospect</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-list"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+    <script src="app.js"></script>
+</body>
+</html>

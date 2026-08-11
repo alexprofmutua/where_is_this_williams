@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | Where is this Williams College</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="about-site">
+        <a href="index.html" class="site-logo" aria-label="Where is this Williams home">
+            <img src="assests/photos/williamscollegelogo.avif" alt="Williams College" />
+        </a>
+
+        <nav class="site-nav" aria-label="Main navigation">
+            <a href="leaderboard.html">Leaderboard</a>
+            <a href="history.html">History</a>
+            <a href="podium.html">Podium of champions</a>
+            <a href="index.html#about">About</a>
+        </nav>
+    </header>
+
+    <main class="app-shell">
+        <section class="dashboard-panel page-panel">
+            <div>
+                <p class="eyebrow">Admin</p>
+                <h1>Post a weekly photo</h1>
+                <p class="page-copy">
+                    Add or update the photo, choices, correct answer, bonus points, and reveal deadline.
+                </p>
+            </div>
+
+            <form class="admin-form" id="admin-question-form">
+                <label>Admin token <input id="admin-token" type="password" required /></label>
+                <label>Question ID <input id="admin-id" type="text" placeholder="week-04" required /></label>
+                <label>Title <input id="admin-title" type="text" placeholder="Week 4" required /></label>
+                <label>Image path <input id="admin-image" type="text" placeholder="assests/photos/sample-4.svg" required /></label>
+                <label>Choices <textarea id="admin-options" rows="4" placeholder="One choice per line" required></textarea></label>
+                <label>Correct answer <input id="admin-answer" type="text" required /></label>
+                <label>Posted at <input id="admin-posted" type="datetime-local" required /></label>
+                <label>Deadline <input id="admin-deadline" type="datetime-local" required /></label>
+                <label>Bonus points <input id="admin-bonus" type="number" min="0" value="0" /></label>
+                <button class="primary-button" type="submit">Save Question</button>
+                <p class="player-status" id="admin-status"></p>
+            </form>
+        </section>
+    </main>
+    <script src="admin.js"></script>
+</body>
+</html>

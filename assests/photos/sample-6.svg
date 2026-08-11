@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-label="Placeholder photo 6">
+  <rect width="1200" height="675" fill="#8b1e3f"/>
+  <rect y="470" width="1200" height="205" fill="#d8d1c0"/>
+  <rect x="180" y="240" width="840" height="260" rx="6" fill="#f8f5ef"/>
+  <rect x="245" y="300" width="130" height="200" fill="#4b2480"/>
+  <rect x="535" y="300" width="130" height="200" fill="#4b2480"/>
+  <rect x="825" y="300" width="130" height="200" fill="#4b2480"/>
+  <text x="70" y="100" fill="#ffffff" font-family="Arial, sans-serif" font-size="48" font-weight="700">Photo 6 placeholder</text>
+</svg>
