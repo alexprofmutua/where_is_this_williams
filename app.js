@@ -3,6 +3,8 @@ const REMINDERS_KEY = "where-is-this-williams-reminders";
 const REFERRER_KEY = "where-is-this-williams-referrer";
 const AUDIO_MUTED_KEY = "where-is-this-williams-audio-muted";
 const MUSIC_STARTED_AT_KEY = "where-is-this-williams-music-started-at";
+const ADMIN_EMAIL = "amm22@williams.edu";
+const ADMIN_INSTAGRAM = "alem_prof";
 
 let appData = { settings: {}, questions: [] };
 let activePlayer = null;
@@ -126,6 +128,10 @@ async function savePlayer(event) {
     const { player, created } = await apiPost("/api/players", payload);
     localStorage.setItem(ACTIVE_UNIX_KEY, player.unix);
     activePlayer = player;
+    if (isHomePage() && isAdminProfile(player)) {
+      window.location.href = "admin.html";
+      return;
+    }
     syncPlayerView(created ? "created" : "login");
     await renderPageData();
   } catch (error) {
@@ -133,6 +139,14 @@ async function savePlayer(event) {
   } finally {
     setPlayerFormBusy(false);
   }
+}
+
+function isAdminProfile(player) {
+  return player.email === ADMIN_EMAIL && normalizeInstagram(player.instagram || player.screenName) === ADMIN_INSTAGRAM;
+}
+
+function isHomePage() {
+  return window.location.pathname === "/" || window.location.pathname.endsWith("/index.html") || window.location.pathname.endsWith("index.html");
 }
 
 function syncPlayerView(mode = "saved") {
