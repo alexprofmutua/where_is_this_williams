@@ -175,6 +175,30 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (req.method === "GET" && url.pathname === "/api/admin/leaderboard") {
+    requireAdmin(req);
+    sendJson(res, 200, { leaders: buildAdminLeaderboard(db) });
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/admin/podium") {
+    requireAdmin(req);
+    sendJson(res, 200, {
+      terms: db.termWinners || [],
+      currentTop: buildAdminLeaderboard(db).filter((leader) => leader.points > 0).slice(0, 3),
+    });
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/admin/player-detail") {
+    requireAdmin(req);
+    const lookup = String(url.searchParams.get("player") || "").trim();
+    const player = findPlayer(db, lookup);
+    if (!player) throw httpError(404, "Player not found.");
+    sendJson(res, 200, buildAdminPlayerDetail(db, player));
+    return;
+  }
+
   if (req.method === "GET" && url.pathname === "/api/admin/player-achievements") {
     requireAdmin(req);
     const lookup = String(url.searchParams.get("player") || "").trim();
@@ -334,6 +358,45 @@ function buildLeaderboard(db) {
       screenName: leader.screenName,
       points: leader.points,
     }));
+}
+
+function buildAdminLeaderboard(db) {
+  const ranked = Object.values(db.players || {}).map((player) => {
+    const votes = (db.votes || []).filter((vote) => vote.unix === player.unix).map((vote) => publicVote(db, vote));
+    return {
+      unix: player.unix,
+      email: player.email,
+      instagram: player.instagram || player.screenName,
+      screenName: player.screenName,
+      points: votes.reduce((total, vote) => total + vote.points, 0),
+      votes: votes.length,
+      correct: votes.filter((vote) => vote.correct).length,
+      finishedAt: latestAnsweredAt(votes),
+    };
+  }).sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    if (b.correct !== a.correct) return b.correct - a.correct;
+    return String(a.instagram).localeCompare(String(b.instagram));
+  });
+
+  return assignLeaderboardPlaces(ranked);
+}
+
+function buildAdminPlayerDetail(db, player) {
+  const history = (db.votes || [])
+    .filter((vote) => vote.unix === player.unix)
+    .map((vote) => publicVote(db, vote));
+  const achievements = buildAchievements(db, player.unix);
+  const cheers = buildCheers(db, player.unix);
+  const leaderboardEntry = buildAdminLeaderboard(db).find((leader) => leader.unix === player.unix);
+
+  return {
+    player: publicPlayer(player),
+    leaderboardEntry,
+    history,
+    achievements,
+    cheers,
+  };
 }
 
 function buildAchievements(db, unix) {
