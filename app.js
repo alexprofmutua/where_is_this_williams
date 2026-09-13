@@ -59,10 +59,20 @@ const resultsAchievements = document.querySelector("#results-achievements");
 init();
 
 async function init() {
+  authMode = getDefaultAuthMode();
   bindEvents();
   captureReferrer();
   appData = await apiGet("/api/bootstrap");
   activePlayer = await loadActivePlayer();
+  if (document.body.classList.contains("requires-player") && !activePlayer) {
+    redirectToLogin();
+    return;
+  }
+  if (isLoginPage() && activePlayer) {
+    redirectAfterLogin(activePlayer);
+    return;
+  }
+  document.body.classList.remove("auth-pending");
   syncPlayerView();
   syncReminderState();
   scheduleVoteReminder();
@@ -106,6 +116,7 @@ async function loadActivePlayer() {
   const unix = localStorage.getItem(ACTIVE_UNIX_KEY);
   if (!unix) return null;
   const { player } = await apiGet(`/api/players/${encodeURIComponent(unix)}`);
+  if (!player) localStorage.removeItem(ACTIVE_UNIX_KEY);
   return player;
 }
 
@@ -119,6 +130,7 @@ async function savePlayer(event) {
     instagram,
     screenName: instagram,
     referredBy: localStorage.getItem(REFERRER_KEY) || "",
+    mode: authMode,
   };
   if (activePlayer?.avatar) payload.avatar = activePlayer.avatar;
   if (activePlayer?.avatarImage) payload.avatarImage = activePlayer.avatarImage;
@@ -128,10 +140,7 @@ async function savePlayer(event) {
     const { player, created } = await apiPost("/api/players", payload);
     localStorage.setItem(ACTIVE_UNIX_KEY, player.unix);
     activePlayer = player;
-    if (isHomePage() && isAdminProfile(player)) {
-      window.location.href = "admin.html";
-      return;
-    }
+    if (isLoginPage() || isAdminProfile(player)) return redirectAfterLogin(player);
     syncPlayerView(created ? "created" : "login");
     await renderPageData();
   } catch (error) {
@@ -149,22 +158,45 @@ function isHomePage() {
   return window.location.pathname === "/" || window.location.pathname.endsWith("/index.html") || window.location.pathname.endsWith("index.html");
 }
 
+function isLoginPage() {
+  return window.location.pathname.endsWith("/login.html") || window.location.pathname.endsWith("login.html");
+}
+
+function getDefaultAuthMode() {
+  if (!isLoginPage()) return "signup";
+  return new URLSearchParams(window.location.search).get("mode") === "signup" ? "signup" : "login";
+}
+
+function redirectToLogin() {
+  const next = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  window.location.href = `login.html?next=${encodeURIComponent(next)}`;
+}
+
+function redirectAfterLogin(player) {
+  if (isAdminProfile(player)) {
+    window.location.href = "admin.html";
+    return;
+  }
+  const next = new URLSearchParams(window.location.search).get("next");
+  window.location.href = next || "index.html";
+}
+
 function syncPlayerView(mode = "saved") {
-  if (!playerForm || !profileCard || !startButton || !playerStatus) return;
+  if (!playerForm || !playerStatus) return;
 
   if (!activePlayer) {
     playerForm.classList.remove("hidden");
-    profileCard.classList.add("hidden");
+    profileCard?.classList.add("hidden");
     setAuthMode(authMode);
-    startButton.disabled = true;
-    playerStatus.textContent = "You can only play once, and I hope you have fun.";
+    if (startButton) startButton.disabled = true;
+    if (!isLoginPage()) playerStatus.textContent = "You can only play once, and I hope you have fun.";
     return;
   }
 
-  emailInput.value = activePlayer.email || "";
-  instagramInput.value = activePlayer.instagram || activePlayer.screenName || "";
+  if (emailInput) emailInput.value = activePlayer.email || "";
+  if (instagramInput) instagramInput.value = activePlayer.instagram || activePlayer.screenName || "";
   playerForm.classList.add("hidden");
-  profileCard.classList.remove("hidden");
+  profileCard?.classList.remove("hidden");
   const actionText = mode === "created" ? "Profile created." : mode === "login" ? "Welcome back." : "Profile saved.";
   playerStatus.textContent = `${actionText} Playing as @${activePlayer.instagram || activePlayer.screenName}. Each photo can only be answered once.`;
   renderProfile();

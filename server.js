@@ -97,8 +97,13 @@ async function handleApi(req, res, url) {
   }
 
   if (req.method === "POST" && url.pathname === "/api/players") {
-    const player = normalizePlayer(await readJson(req));
+    const body = await readJson(req);
+    const player = normalizePlayer(body);
+    const authMode = body.mode === "login" ? "login" : "signup";
     const existingPlayer = db.players[player.unix];
+    if (authMode === "login" && !existingPlayer) {
+      throw httpError(404, "No profile exists for that Williams email yet. Please sign up first.");
+    }
     if (existingPlayer && (existingPlayer.instagram || existingPlayer.screenName) !== player.instagram) {
       throw httpError(409, "This Williams email is already registered. Enter the Instagram username exactly as it was first saved.");
     }

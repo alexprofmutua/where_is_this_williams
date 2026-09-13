@@ -36,6 +36,11 @@ body {
     padding: clamp(28px, 5vw, 56px);
 }
 
+body.auth-pending .about-site,
+body.auth-pending .app-shell {
+    visibility: hidden;
+}
+
 .about-site {
     width: min(1180px, 100%);
     display: flex;
@@ -256,6 +261,14 @@ body {
     margin-top: 22px;
 }
 
+.button-status-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-top: 8px;
+}
+
 .admin-form label {
     display: grid;
     gap: 6px;
@@ -430,6 +443,11 @@ body {
     margin: -8px 0 0;
     color: var(--muted);
     font-size: 0.95rem;
+    line-height: 1.35;
+}
+
+.button-status-stack .player-status {
+    margin: 0;
 }
 
 .profile-card {

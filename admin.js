@@ -26,6 +26,7 @@ const adminAchievementCount = document.querySelector("#admin-achievement-count")
 const adminAchievementList = document.querySelector("#admin-achievement-list");
 const adminCheersCount = document.querySelector("#admin-cheers-count");
 const adminCheersList = document.querySelector("#admin-cheers-list");
+const adminPrivatePanels = document.querySelectorAll(".admin-private");
 
 form.addEventListener("submit", saveQuestion);
 loadDashboardButton?.addEventListener("click", loadDashboard);
@@ -68,12 +69,27 @@ async function saveQuestion(event) {
 async function loadDashboard() {
   if (!getAdminToken()) {
     dashboardStatus.textContent = "Enter your admin token first.";
+    setAdminUnlocked(false);
     return;
   }
 
-  dashboardStatus.textContent = "Loading admin dashboard...";
-  await Promise.allSettled([loadAdminLeaderboard(), loadAdminStats(), loadAdminPodium()]);
-  dashboardStatus.textContent = "Dashboard loaded.";
+  try {
+    dashboardStatus.textContent = "Checking admin token...";
+    await adminFetch("/api/admin/questions");
+    setAdminUnlocked(true);
+    dashboardStatus.textContent = "Loading admin dashboard...";
+    await Promise.allSettled([loadAdminLeaderboard(), loadAdminStats(), loadAdminPodium()]);
+    dashboardStatus.textContent = "Dashboard loaded.";
+  } catch (error) {
+    setAdminUnlocked(false);
+    dashboardStatus.textContent = error.message;
+  }
+}
+
+function setAdminUnlocked(isUnlocked) {
+  adminPrivatePanels.forEach((panel) => {
+    panel.classList.toggle("hidden", !isUnlocked);
+  });
 }
 
 async function loadAdminLeaderboard() {
