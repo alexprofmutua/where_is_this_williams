@@ -166,14 +166,14 @@ function setAuthMode(mode) {
   });
 
   if (authMode === "login") {
-    if (playerFormTitle) playerFormTitle.textContent = "Log in to your player profile";
+    if (playerFormTitle) playerFormTitle.textContent = "Log in";
     if (playerFormHelp) playerFormHelp.textContent = "Returning player? Enter the same Williams email and exact Instagram username you used before.";
     if (savePlayerButton) savePlayerButton.textContent = "Log In";
     if (playerStatus) playerStatus.textContent = "Your saved answers, score, history, and stickers will load after login.";
     return;
   }
 
-  if (playerFormTitle) playerFormTitle.textContent = "Create your player profile";
+  if (playerFormTitle) playerFormTitle.textContent = "Join the game";
   if (playerFormHelp) playerFormHelp.textContent = "First time playing? Use your Williams email and Instagram username to make your profile.";
   if (savePlayerButton) savePlayerButton.textContent = "Sign Up";
   if (playerStatus) playerStatus.textContent = "You can only play once, and I hope you have fun.";
@@ -235,11 +235,11 @@ function saveUploadedAvatar(event) {
 async function startQuiz() {
   const eventState = getEventState();
   if (!activePlayer) {
-    playerStatus.textContent = "Create your profile first.";
+    playerStatus.textContent = "Sign up or log in first.";
     return;
   }
   if (!activePlayer.verified) {
-    playerStatus.textContent = "Save your Williams email and Instagram username before voting.";
+    playerStatus.textContent = "Sign up or log in with your Williams email and Instagram username before voting.";
     return;
   }
   if (eventState === "early") {
@@ -396,13 +396,13 @@ async function renderHistory() {
   if (historyList) {
     historyList.innerHTML = votes.length
       ? votes.map((vote) => `<article class="history-item"><strong>${vote.title}</strong><span>${historyText(vote)}</span><b>${vote.revealed ? `${vote.points} pts` : "Pending"}</b></article>`).join("")
-      : "<p>No history yet. Save your profile and make your first guess.</p>";
+      : "<p>No history yet. Sign up or log in, then make your first guess.</p>";
   }
 
   if (historyTableBody) {
     historyTableBody.innerHTML = votes.length
       ? votes.map((vote) => `<tr><td>${escapeHtml(vote.title)}</td><td>${escapeHtml(vote.choice)}</td><td>${escapeHtml(vote.correctAnswer || "Hidden until reveal")}</td><td>${escapeHtml(historyResultLabel(vote))}</td><td>${vote.correct ? 10 : 0}</td><td>${vote.correct ? vote.bonusPoints : 0}</td><td>${vote.points}</td><td>${formatDate(vote.answeredAt)}</td></tr>`).join("")
-      : `<tr><td colspan="8">No voting history yet. Save your player profile on the home page and make your first guess.</td></tr>`;
+      : `<tr><td colspan="8">No voting history yet. Sign up or log in on the home page, then make your first guess.</td></tr>`;
   }
 }
 
@@ -411,7 +411,7 @@ async function renderAchievements(target, options = {}) {
   if (!activePlayer) {
     if (achievementCount) achievementCount.textContent = "Achievements (0/11)";
     if (cheersCount) cheersCount.textContent = "Cheers (0/2)";
-    target.innerHTML = `<p class="achievement-empty">Save your player profile on the home page to start unlocking stickers.</p>`;
+    target.innerHTML = `<p class="achievement-empty">Sign up or log in on the home page to start unlocking stickers.</p>`;
     return;
   }
   const achievementPayload = await apiGet(`/api/achievements/${encodeURIComponent(activePlayer.unix)}`);
@@ -484,7 +484,7 @@ async function renderPodium() {
 }
 
 function historyText(vote) {
-  if (!vote.revealed) return `Saved: ${vote.choice}. Answer hidden until the reveal.`;
+  if (!vote.revealed) return `Picked: ${vote.choice}. Answer hidden until the reveal.`;
   if (vote.correct) return `${vote.choice} was guessed right.`;
   return `${historyResultLabel(vote)}: answer was ${vote.correctAnswer}.`;
 }

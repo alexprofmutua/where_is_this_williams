@@ -197,7 +197,7 @@ function createVote(db, body) {
   const feedbackText = String(body.feedbackText || "").trim().slice(0, 800);
   const question = db.questions.find((item) => item.id === questionId);
 
-  if (!db.players[unix]) throw httpError(400, "Create a player profile first.");
+  if (!db.players[unix]) throw httpError(400, "Sign up or log in first.");
   if (!db.players[unix].verified) throw httpError(403, "Verify your Williams email before voting.");
   if (!question) throw httpError(404, "Question not found.");
   if (!isPosted(question)) throw httpError(400, "Voting has not opened for this photo yet.");
@@ -294,7 +294,7 @@ function buildAchievements(db, unix) {
   const firstCorrectIndex = questionVotes.findIndex((vote) => vote.correct);
 
   return [
-    achievement("first-eye", "First Eye", "👁️", "Saved your first guess.", questionVotes.length >= 1),
+    achievement("first-eye", "First Eye", "👁️", "Made your first guess.", questionVotes.length >= 1),
     achievement("campus-scout", "Campus Scout", "🗺️", "Answered 3 photos.", questionVotes.length >= 3),
     achievement("full-tour", "Full Tour", "🎒", "Answered every location photo.", questionVotes.length >= questionCount && questionCount > 0),
     achievement("speed-runner", "Speed Runner", "⚡", "Finished the whole run.", votes.length >= db.questions.length && db.questions.length > 0),
