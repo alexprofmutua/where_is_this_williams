@@ -737,6 +737,13 @@ h2 {
     line-height: 1.35;
 }
 
+.admin-sticker-card small {
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 0.76rem;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
 .achievement-card.locked {
     opacity: 1;
     filter: none;

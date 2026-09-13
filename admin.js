@@ -126,16 +126,17 @@ function renderPlayerCollection({ player, achievements, cheers }) {
   adminPlayerMeta.textContent = `${player.email} · @${player.instagram || player.screenName}`;
   adminAchievementCount.textContent = `Achievements (${unlockedAchievements}/${achievements.length})`;
   adminCheersCount.textContent = `Cheers (${unlockedCheers}/${cheers.length})`;
-  adminAchievementList.innerHTML = achievements.map(renderStickerCard).join("");
-  adminCheersList.innerHTML = cheers.map(renderStickerCard).join("");
+  adminAchievementList.innerHTML = achievements.map(renderAdminStickerCard).join("");
+  adminCheersList.innerHTML = cheers.map(renderAdminStickerCard).join("");
 }
 
-function renderStickerCard(item) {
+function renderAdminStickerCard(item) {
   return `
-    <article class="achievement-card ${item.unlocked ? "unlocked" : "locked"}">
+    <article class="achievement-card admin-sticker-card unlocked">
       <span>${escapeHtml(item.sticker)}${item.count ? `<b>${escapeHtml(item.count)}</b>` : ""}</span>
       <strong>${escapeHtml(item.title)}</strong>
       <em>${escapeHtml(item.description)}</em>
+      <small>${item.unlocked ? "Unlocked" : "Not unlocked yet"}</small>
     </article>
   `;
 }
