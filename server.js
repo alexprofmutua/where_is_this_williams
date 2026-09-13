@@ -323,6 +323,22 @@ function publicVote(db, vote) {
   };
 }
 
+function adminVote(db, vote) {
+  const question = db.questions.find((item) => item.id === vote.questionId);
+  const isFeedback = question?.kind === "feedback";
+  const correct = Boolean(!isFeedback && question && question.answer === vote.choice);
+
+  return {
+    ...vote,
+    title: question?.title || vote.title,
+    revealed: true,
+    correct,
+    correctAnswer: !isFeedback && question ? question.answer : null,
+    bonusPoints: question?.bonusPoints || 0,
+    points: correct ? db.settings.basePoints + (question?.bonusPoints || 0) : 0,
+  };
+}
+
 function buildLeaderboard(db) {
   const currentPlayers = Object.values(db.players).map((player) => {
     const votes = db.votes.filter((vote) => vote.unix === player.unix).map((vote) => publicVote(db, vote));
@@ -363,7 +379,7 @@ function buildLeaderboard(db) {
 
 function buildAdminLeaderboard(db) {
   const ranked = Object.values(db.players || {}).map((player) => {
-    const votes = (db.votes || []).filter((vote) => vote.unix === player.unix).map((vote) => publicVote(db, vote));
+    const votes = (db.votes || []).filter((vote) => vote.unix === player.unix).map((vote) => adminVote(db, vote));
     return {
       unix: player.unix,
       email: player.email,
@@ -386,7 +402,7 @@ function buildAdminLeaderboard(db) {
 function buildAdminPlayerDetail(db, player) {
   const history = (db.votes || [])
     .filter((vote) => vote.unix === player.unix)
-    .map((vote) => publicVote(db, vote));
+    .map((vote) => adminVote(db, vote));
   const achievements = buildAchievements(db, player.unix);
   const cheers = buildCheers(db, player.unix);
   const leaderboardEntry = buildAdminLeaderboard(db).find((leader) => leader.unix === player.unix);
