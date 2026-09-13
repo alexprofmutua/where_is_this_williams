@@ -1059,6 +1059,29 @@ h2 {
     margin-bottom: 16px;
 }
 
+.timer-panel {
+    justify-self: end;
+    min-width: 138px;
+    display: grid;
+    gap: 2px;
+    padding: 10px 14px;
+    text-align: center;
+    background: #f7f3ea;
+    border: 2px solid var(--purple);
+    border-radius: 8px;
+}
+
+.timer-panel .label {
+    color: var(--purple);
+}
+
+#timer {
+    color: var(--purple);
+    font-size: clamp(2.25rem, 9vw, 4.5rem);
+    line-height: 0.95;
+    font-weight: 950;
+}
+
 .score-pill {
     min-width: 128px;
     min-height: 48px;
