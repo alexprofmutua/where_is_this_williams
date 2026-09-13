@@ -1,3 +1,4 @@
+const ADMIN_TOKEN_KEY = "where-is-this-williams-admin-token";
 const form = document.querySelector("#admin-question-form");
 const statusText = document.querySelector("#admin-status");
 const adminTokenInput = document.querySelector("#admin-token");
@@ -28,8 +29,15 @@ const adminCheersCount = document.querySelector("#admin-cheers-count");
 const adminCheersList = document.querySelector("#admin-cheers-list");
 const adminPrivatePanels = document.querySelectorAll(".admin-private");
 
+initAdminAccess();
+
 form.addEventListener("submit", saveQuestion);
 loadDashboardButton?.addEventListener("click", loadDashboard);
+adminTokenInput?.addEventListener("input", () => {
+  const token = getAdminToken();
+  if (token) localStorage.setItem(ADMIN_TOKEN_KEY, token);
+  else localStorage.removeItem(ADMIN_TOKEN_KEY);
+});
 refreshLeaderboardButton?.addEventListener("click", loadAdminLeaderboard);
 refreshStatsButton?.addEventListener("click", loadAdminStats);
 refreshPodiumButton?.addEventListener("click", loadAdminPodium);
@@ -37,6 +45,13 @@ loadPlayerAchievementsButton?.addEventListener("click", () => {
   const lookup = document.querySelector("#admin-player-lookup").value.trim();
   loadPlayerDetail(lookup);
 });
+
+function initAdminAccess() {
+  const savedToken = localStorage.getItem(ADMIN_TOKEN_KEY) || "";
+  if (!savedToken || !adminTokenInput) return;
+  adminTokenInput.value = savedToken;
+  window.setTimeout(loadDashboard, 0);
+}
 
 async function saveQuestion(event) {
   event.preventDefault();
@@ -74,6 +89,7 @@ async function loadDashboard() {
   }
 
   try {
+    localStorage.setItem(ADMIN_TOKEN_KEY, getAdminToken());
     dashboardStatus.textContent = "Checking admin token...";
     await adminFetch("/api/admin/questions");
     setAdminUnlocked(true);
