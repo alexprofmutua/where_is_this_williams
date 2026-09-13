@@ -4,7 +4,7 @@
     "leaderboardMaxRank": 12,
     "basePoints": 10,
     "eventOpenAt": "2026-09-13T18:30:00",
-    "eventCloseAt": "2026-09-13T21:30:00",
+    "eventCloseAt": "2026-09-13T21:00:00",
     "reminderAt": "2026-09-13T18:15:00",
     "revealAt": "2026-09-14T12:00:00",
     "secondsPerPhoto": 10
@@ -18,7 +18,7 @@
       "image": "assests/photos/competition/competition-01.jpg",
       "postedAt": "2026-09-13T18:30:00",
       "bonusPoints": 10,
-      "deadlineAt": "2026-09-13T21:30:00",
+      "deadlineAt": "2026-09-13T21:00:00",
       "revealAt": "2026-09-14T12:00:00",
       "answer": "Dodd House",
       "options": [
@@ -34,7 +34,7 @@
       "image": "assests/photos/competition/competition-02.jpg",
       "postedAt": "2026-09-13T18:30:00",
       "bonusPoints": 0,
-      "deadlineAt": "2026-09-13T21:30:00",
+      "deadlineAt": "2026-09-13T21:00:00",
       "revealAt": "2026-09-14T12:00:00",
       "answer": "Weston Hall",
       "options": [
@@ -50,7 +50,7 @@
       "image": "assests/photos/competition/competition-03.png",
       "postedAt": "2026-09-13T18:30:00",
       "bonusPoints": 0,
-      "deadlineAt": "2026-09-13T21:30:00",
+      "deadlineAt": "2026-09-13T21:00:00",
       "revealAt": "2026-09-14T12:00:00",
       "answer": "Poker Flats",
       "options": [
@@ -66,7 +66,7 @@
       "image": "assests/photos/competition/competition-04.png",
       "postedAt": "2026-09-13T18:30:00",
       "bonusPoints": 0,
-      "deadlineAt": "2026-09-13T21:30:00",
+      "deadlineAt": "2026-09-13T21:00:00",
       "revealAt": "2026-09-14T12:00:00",
       "answer": "Thompson Hall",
       "options": [
@@ -82,7 +82,7 @@
       "image": "assests/photos/competition/competition-05.png",
       "postedAt": "2026-09-13T18:30:00",
       "bonusPoints": 0,
-      "deadlineAt": "2026-09-13T21:30:00",
+      "deadlineAt": "2026-09-13T21:00:00",
       "revealAt": "2026-09-14T12:00:00",
       "answer": "Mission",
       "options": [
@@ -98,7 +98,7 @@
       "image": "assests/photos/competition/competition-06.png",
       "postedAt": "2026-09-13T18:30:00",
       "bonusPoints": 0,
-      "deadlineAt": "2026-09-13T21:30:00",
+      "deadlineAt": "2026-09-13T21:00:00",
       "revealAt": "2026-09-14T12:00:00",
       "answer": "Hollander Hall",
       "options": [
@@ -114,7 +114,7 @@
       "image": "assests/photos/competition/competition-07.png",
       "postedAt": "2026-09-13T18:30:00",
       "bonusPoints": 20,
-      "deadlineAt": "2026-09-13T21:30:00",
+      "deadlineAt": "2026-09-13T21:00:00",
       "revealAt": "2026-09-14T12:00:00",
       "answer": "Sawyer",
       "options": [
@@ -130,7 +130,7 @@
       "image": "assests/photos/competition/competition-09.png",
       "postedAt": "2026-09-13T18:30:00",
       "bonusPoints": 10,
-      "deadlineAt": "2026-09-13T21:30:00",
+      "deadlineAt": "2026-09-13T21:00:00",
       "revealAt": "2026-09-14T12:00:00",
       "answer": "Hopkins Hall",
       "options": [
@@ -146,7 +146,7 @@
       "image": "assests/photos/competition/competition-10.png",
       "postedAt": "2026-09-13T18:30:00",
       "bonusPoints": 0,
-      "deadlineAt": "2026-09-13T21:30:00",
+      "deadlineAt": "2026-09-13T21:00:00",
       "revealAt": "2026-09-14T12:00:00",
       "answer": "Thompson Memorial Chapel",
       "options": [
@@ -162,7 +162,7 @@
       "image": "assests/photos/competition/competition-11.png",
       "postedAt": "2026-09-13T18:30:00",
       "bonusPoints": 0,
-      "deadlineAt": "2026-09-13T21:30:00",
+      "deadlineAt": "2026-09-13T21:00:00",
       "revealAt": "2026-09-14T12:00:00",
       "answer": "62 Center for Theatre and Dance",
       "options": [
@@ -178,7 +178,7 @@
       "image": "assests/photos/competition/competition-12.png",
       "postedAt": "2026-09-13T18:30:00",
       "bonusPoints": 0,
-      "deadlineAt": "2026-09-13T21:30:00",
+      "deadlineAt": "2026-09-13T21:00:00",
       "revealAt": "2026-09-14T12:00:00",
       "answer": "Davis Center",
       "options": [
@@ -194,7 +194,7 @@
       "image": "assests/photos/competition/competition-13.png",
       "postedAt": "2026-09-13T18:30:00",
       "bonusPoints": 0,
-      "deadlineAt": "2026-09-13T21:30:00",
+      "deadlineAt": "2026-09-13T21:00:00",
       "revealAt": "2026-09-14T12:00:00",
       "answer": "Horn House",
       "options": [
@@ -210,7 +210,7 @@
       "image": "assests/photos/competition/competition-14.png",
       "postedAt": "2026-09-13T18:30:00",
       "bonusPoints": 20,
-      "deadlineAt": "2026-09-13T21:30:00",
+      "deadlineAt": "2026-09-13T21:00:00",
       "revealAt": "2026-09-14T12:00:00",
       "answer": "Milham House",
       "options": [
@@ -227,7 +227,7 @@
       "image": "assests/photos/competition/competition-02.png",
       "postedAt": "2026-09-13T18:30:00",
       "bonusPoints": 0,
-      "deadlineAt": "2026-09-13T21:30:00",
+      "deadlineAt": "2026-09-13T21:00:00",
       "revealAt": "2026-09-14T12:00:00",
       "answer": "Yes",
       "options": [
