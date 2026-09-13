@@ -40,6 +40,7 @@ const reminderStatus = document.querySelector("#reminder-status");
 const questionCount = document.querySelector("#question-count");
 const scoreText = document.querySelector("#score");
 const timerText = document.querySelector("#timer");
+const photoPointsText = document.querySelector("#photo-points");
 const quizPhoto = document.querySelector("#quiz-photo");
 const photoCaption = document.querySelector("#photo-caption");
 const answers = document.querySelector("#answers");
@@ -300,6 +301,7 @@ async function showQuestion() {
 
   questionCount.textContent = `${currentQuestionIndex + 1} / ${appData.questions.length}`;
   scoreText.textContent = await getActiveScore();
+  if (photoPointsText) photoPointsText.textContent = `${getQuestionPoints(question)} points`;
   answers.replaceChildren();
   quizPhoto.src = question.image;
   photoCaption.textContent = getQuestionCaption(question, existingVote);
@@ -389,6 +391,11 @@ function getQuestionCaption(question, existingVote) {
   if (existingVote) return `Your answer was saved. The correct location unlocks after ${formatDate(question.revealAt || question.deadlineAt)}.`;
   if (question.closed) return `${question.title}: voting is closed. Solutions release after ${formatDate(question.revealAt || question.deadlineAt)}.`;
   return `${question.title}: choose quickly. You have ${appData.settings.secondsPerPhoto || 10} seconds.`;
+}
+
+function getQuestionPoints(question) {
+  if (question.kind === "feedback") return 0;
+  return Number(appData.settings.basePoints || 10) + Number(question.bonusPoints || 0);
 }
 
 async function getActiveHistory() {

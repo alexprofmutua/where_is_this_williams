@@ -1179,10 +1179,40 @@ h2 {
 
 .quiz-topbar {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     gap: 12px;
     margin-bottom: 16px;
+}
+
+.photo-playbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.points-panel {
+    min-height: 74px;
+    display: grid;
+    align-content: center;
+    gap: 2px;
+    padding: 10px 14px;
+    color: white;
+    background: var(--purple);
+    border-radius: 8px;
+}
+
+.points-panel .label {
+    color: rgba(255, 255, 255, 0.76);
+}
+
+#photo-points {
+    color: white;
+    font-size: clamp(1.5rem, 4vw, 2.4rem);
+    line-height: 1;
+    font-weight: 950;
 }
 
 .timer-panel {
@@ -1323,6 +1353,12 @@ h2 {
         gap: 10px;
     }
 
+    .photo-playbar {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: stretch;
+        gap: 10px;
+    }
+
     .quiz-topbar > div,
     .timer-panel,
     .score-pill {
@@ -1338,6 +1374,15 @@ h2 {
     .timer-panel {
         min-width: 0;
         padding: 12px;
+    }
+
+    .points-panel {
+        min-height: 70px;
+        padding: 10px 12px;
+    }
+
+    #photo-points {
+        font-size: clamp(1.35rem, 8vw, 2rem);
     }
 
     #timer {
@@ -1597,5 +1642,9 @@ h2 {
     .history-table td {
         flex-direction: column;
         gap: 4px;
+    }
+
+    .photo-playbar {
+        grid-template-columns: 1fr;
     }
 }
