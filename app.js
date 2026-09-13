@@ -10,6 +10,7 @@ let appData = { settings: {}, questions: [] };
 let activePlayer = null;
 let currentQuestionIndex = 0;
 let timerId = null;
+let autoAdvanceTimerId = null;
 let eventWindowTimerId = null;
 let music = null;
 let questionEndsAt = null;
@@ -365,24 +366,36 @@ async function submitVote(question, choice, button) {
     photoCaption.textContent = question.kind === "feedback"
       ? "Thanks. Your feedback was saved."
       : `Your answer was saved. The correct location and points unlock after ${formatDate(question.revealAt || question.deadlineAt)}.`;
-    showNextQuestionButton();
+    showNextQuestionButton({ autoAdvance: true });
   } catch (error) {
     photoCaption.textContent = error.message;
   }
 }
 
-function showNextQuestionButton() {
+function showNextQuestionButton({ autoAdvance = false } = {}) {
   if (!nextQuestionButton) return;
   const isLastQuestion = currentQuestionIndex >= appData.questions.length - 1;
   nextQuestionButton.textContent = isLastQuestion ? "See Results" : "Next Photo";
   nextQuestionButton.classList.remove("hidden");
+  if (autoAdvance) {
+    clearAutoAdvanceTimer();
+    autoAdvanceTimerId = window.setTimeout(nextQuestion, Number(appData.settings.secondsPerPhoto || 10) * 1000);
+  }
 }
 
 function hideNextQuestionButton() {
   nextQuestionButton?.classList.add("hidden");
+  clearAutoAdvanceTimer();
+}
+
+function clearAutoAdvanceTimer() {
+  if (!autoAdvanceTimerId) return;
+  window.clearTimeout(autoAdvanceTimerId);
+  autoAdvanceTimerId = null;
 }
 
 async function nextQuestion() {
+  clearAutoAdvanceTimer();
   currentQuestionIndex += 1;
   if (currentQuestionIndex < appData.questions.length) {
     await showQuestion();
@@ -838,6 +851,7 @@ function updateDeadlineClock(question) {
         ? "Time is up. Thanks for playing."
         : "Time is up. Moving to the next photo.";
       showNextQuestionButton();
+      autoAdvanceTimerId = window.setTimeout(nextQuestion, 700);
       return;
     }
     timerText.textContent = `${Math.ceil(remaining / 1000)}s`;
