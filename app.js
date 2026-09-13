@@ -1,6 +1,8 @@
 const ACTIVE_UNIX_KEY = "where-is-this-williams-active-unix";
 const REMINDERS_KEY = "where-is-this-williams-reminders";
 const REFERRER_KEY = "where-is-this-williams-referrer";
+const AUDIO_MUTED_KEY = "where-is-this-williams-audio-muted";
+const MUSIC_STARTED_AT_KEY = "where-is-this-williams-music-started-at";
 
 let appData = { settings: {}, questions: [] };
 let activePlayer = null;
@@ -578,22 +580,25 @@ function createGameMusic() {
       isMuted: () => true,
       setMuted: () => {},
       start: () => {
-        audioToggle.textContent = "No Audio";
+        if (audioToggle) audioToggle.textContent = "No Audio";
       },
       stop: () => {},
     };
   }
 
   const audio = new AudioContext();
+  const stepDuration = 300;
+  const loopSteps = 16;
   let beatTimer = null;
-  let step = 0;
-  let muted = false;
+  let lastPlayedStep = -1;
+  let muted = localStorage.getItem(AUDIO_MUTED_KEY) === "yes";
 
   function start() {
     if (beatTimer) return;
+    ensureMusicClock();
     audio.resume().catch(() => {});
     playStep();
-    beatTimer = window.setInterval(playStep, 300);
+    beatTimer = window.setInterval(playStep, 75);
   }
 
   function stop() {
@@ -612,20 +617,38 @@ function createGameMusic() {
 
   function setMuted(value) {
     muted = Boolean(value);
+    localStorage.setItem(AUDIO_MUTED_KEY, muted ? "yes" : "no");
   }
 
   function playStep() {
+    const step = getCurrentStep();
+    if (step === lastPlayedStep) return;
+    lastPlayedStep = step;
+
     if (muted) {
-      step = (step + 1) % 16;
       return;
     }
+
     const now = audio.currentTime;
     if (step % 4 === 0) playDrum(now, 110, 0.18, 0.22);
     if (step % 4 === 2) playDrum(now, 170, 0.08, 0.12);
     if (step % 2 === 1) playTick(now);
     if (step % 8 === 0) playTone(now, 392, 0.28);
     if (step % 8 === 4) playTone(now, 523.25, 0.22);
-    step = (step + 1) % 16;
+  }
+
+  function ensureMusicClock() {
+    const startedAt = Number(localStorage.getItem(MUSIC_STARTED_AT_KEY));
+    if (!startedAt || !Number.isFinite(startedAt)) {
+      localStorage.setItem(MUSIC_STARTED_AT_KEY, String(Date.now()));
+    }
+  }
+
+  function getCurrentStep() {
+    ensureMusicClock();
+    const startedAt = Number(localStorage.getItem(MUSIC_STARTED_AT_KEY));
+    const elapsed = Math.max(0, Date.now() - startedAt);
+    return Math.floor(elapsed / stepDuration) % loopSteps;
   }
 
   function playDrum(time, frequency, duration, volume) {
@@ -757,6 +780,7 @@ function getReminderAt() {
 }
 
 function playReminderChime() {
+  if (localStorage.getItem(AUDIO_MUTED_KEY) === "yes") return;
   const AudioContext = window.AudioContext || window.webkitAudioContext;
   if (!AudioContext) return;
   const audio = new AudioContext();
