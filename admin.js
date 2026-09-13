@@ -146,8 +146,8 @@ async function loadAdminStats() {
 
 function renderAdminStats(stats) {
   const cards = [
-    ["Total visits", stats.totalVisits],
-    ["Unique visitors", stats.uniqueVisitors],
+    ["Total site visits", stats.totalVisits],
+    ["Unique visitors total", stats.uniqueVisitors],
     ["Players", stats.players],
     ["Votes", stats.votes],
     ["Unique voters", stats.uniqueVoters],
