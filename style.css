@@ -1301,6 +1301,7 @@ h2 {
     padding: 14px 16px;
     background: var(--card);
     border: 2px solid var(--purple);
+    position: relative;
     text-align: left;
 }
 
@@ -1311,8 +1312,26 @@ h2 {
 }
 
 .answer-button.selected {
-    background: #fff7dd;
+    color: white;
+    background: var(--purple);
     border-color: var(--gold);
+    box-shadow: 0 0 0 4px rgba(243, 196, 77, 0.55), 0 12px 28px rgba(75, 36, 128, 0.32);
+    padding-right: 116px;
+}
+
+.answer-button.selected::after {
+    content: "Selected";
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 5px 8px;
+    color: var(--ink);
+    background: var(--gold);
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 950;
+    text-transform: uppercase;
 }
 
 .answer-button.correct {
