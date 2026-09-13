@@ -446,10 +446,62 @@ function renderCheers(cheers) {
 function renderReferralCard() {
   if (!referralCard || !activePlayer) return;
   const url = `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, "index.html")}?ref=${encodeURIComponent(activePlayer.unix)}`;
+  const message = `Join me on Where Is This Williams: ${url}`;
+  const encodedUrl = encodeURIComponent(url);
+  const encodedMessage = encodeURIComponent(message);
   referralCard.innerHTML = `
     <strong>Your referral link</strong>
     <span>${escapeHtml(url)}</span>
+    <div class="referral-actions" aria-label="Share your referral link">
+      <button class="share-button primary-share" type="button" data-native-share="${escapeHtml(url)}">Share</button>
+      <a class="share-button" href="mailto:?subject=Where%20Is%20This%20Williams&body=${encodedMessage}">Email</a>
+      <a class="share-button" href="https://wa.me/?text=${encodedMessage}" target="_blank" rel="noopener">WhatsApp</a>
+      <a class="share-button" href="https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}" target="_blank" rel="noopener">Facebook</a>
+      <a class="share-button" href="https://twitter.com/intent/tweet?text=${encodedMessage}" target="_blank" rel="noopener">Twitter/X</a>
+      <a class="share-button" href="https://groupme.com/share?text=${encodedMessage}" target="_blank" rel="noopener">GroupMe</a>
+      <button class="share-button" type="button" data-copy-share="Snapchat">Snapchat</button>
+      <button class="share-button" type="button" data-copy-share="Instagram">Instagram</button>
+      <a class="share-button" href="sms:?body=${encodedMessage}">Messages</a>
+    </div>
+    <small id="referral-share-status">Share your link so friends can join from your invite.</small>
   `;
+  bindReferralShareButtons(url);
+}
+
+function bindReferralShareButtons(url) {
+  referralCard.querySelector("[data-native-share]")?.addEventListener("click", async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Where Is This Williams", text: "Join me on Where Is This Williams.", url });
+        setReferralShareStatus("Share sheet opened.");
+        return;
+      } catch (error) {
+        if (error.name === "AbortError") return;
+      }
+    }
+    await copyReferralLink(url);
+  });
+
+  referralCard.querySelectorAll("[data-copy-share]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await copyReferralLink(url);
+      setReferralShareStatus(`Link copied. Paste it into ${button.dataset.copyShare}.`);
+    });
+  });
+}
+
+async function copyReferralLink(url) {
+  try {
+    await navigator.clipboard.writeText(url);
+    setReferralShareStatus("Referral link copied.");
+  } catch {
+    setReferralShareStatus("Copy failed. Press and hold the link above to copy it.");
+  }
+}
+
+function setReferralShareStatus(message) {
+  const status = document.querySelector("#referral-share-status");
+  if (status) status.textContent = message;
 }
 
 async function renderPodium() {

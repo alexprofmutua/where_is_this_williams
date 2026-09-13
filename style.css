@@ -734,6 +734,40 @@ h2 {
     color: rgba(255, 255, 255, 0.82);
 }
 
+.referral-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.share-button {
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    color: var(--ink);
+    background: rgba(255, 255, 255, 0.9);
+    border: 0;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 0.86rem;
+    font-weight: 900;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.share-button.primary-share {
+    color: white;
+    background: var(--purple);
+}
+
+.referral-card small {
+    color: rgba(255, 255, 255, 0.78);
+    line-height: 1.35;
+}
+
 @keyframes sticker-pop {
     0% {
         opacity: 0;
