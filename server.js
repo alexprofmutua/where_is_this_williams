@@ -378,7 +378,18 @@ function buildLeaderboard(db) {
 }
 
 function buildAdminLeaderboard(db) {
-  const ranked = Object.values(db.players || {}).map((player) => {
+  const playerEntries = new Map(Object.values(db.players || {}).map((player) => [player.unix, player]));
+  (db.votes || []).forEach((vote) => {
+    if (playerEntries.has(vote.unix)) return;
+    playerEntries.set(vote.unix, {
+      unix: vote.unix,
+      email: `${vote.unix}@williams.edu`,
+      instagram: vote.unix,
+      screenName: vote.unix,
+    });
+  });
+
+  const ranked = [...playerEntries.values()].map((player) => {
     const votes = (db.votes || []).filter((vote) => vote.unix === player.unix).map((vote) => adminVote(db, vote));
     return {
       unix: player.unix,
