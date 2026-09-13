@@ -15,6 +15,7 @@
         <nav class="site-nav" aria-label="Main navigation">
             <a href="leaderboard.html">Leaderboard</a>
             <a href="history.html">History</a>
+            <a href="achievements.html">Achievements</a>
             <a href="podium.html">Podium of champions</a>
             <a href="index.html#about">About</a>
         </nav>
@@ -38,7 +39,8 @@
                 <label>Choices <textarea id="admin-options" rows="4" placeholder="One choice per line" required></textarea></label>
                 <label>Correct answer <input id="admin-answer" type="text" required /></label>
                 <label>Posted at <input id="admin-posted" type="datetime-local" required /></label>
-                <label>Deadline <input id="admin-deadline" type="datetime-local" required /></label>
+                <label>Voting deadline <input id="admin-deadline" type="datetime-local" required /></label>
+                <label>Reveal at <input id="admin-reveal" type="datetime-local" required /></label>
                 <label>Bonus points <input id="admin-bonus" type="number" min="0" value="0" /></label>
                 <button class="primary-button" type="submit">Save Question</button>
                 <p class="player-status" id="admin-status"></p>

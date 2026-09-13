@@ -1,8 +1,8 @@
 # Where Is This Williams
 
-A Williams College campus-location guessing app with verified player profiles, timed photo challenges, delayed answer reveals, scoring, voting history, and leaderboards.
+A Williams College campus-location guessing app with simple player profiles, timed photo challenges, delayed answer reveals, scoring, voting history, and leaderboards.
 
-Players register with a Williams email, verify their profile, and submit one guess per photo before the deadline. Once a challenge closes, the correct answer is revealed and points are added to the leaderboard.
+Players sign in with a Williams email and Instagram username, then submit one guess per photo before the voting deadline. Correct answers stay hidden until the configured reveal time.
 
 ## Live App
 
@@ -24,10 +24,10 @@ https://whereisthiswilliams-production.up.railway.app/
 
 ## Features
 
-- Williams-only player registration with `@williams.edu` email verification.
-- Player profiles with real names, screen names, Williams Unix IDs, avatars, and uploaded profile pictures.
+- Williams-only player registration with `@williams.edu` email and Instagram username.
+- Player profiles with Instagram usernames, avatars, and uploaded profile pictures.
 - Timed photo challenges with one saved guess per player.
-- Delayed answer reveals after each challenge deadline.
+- Delayed answer reveals after each configured reveal time.
 - Base scoring with optional per-photo bonus points.
 - Leaderboard combining imported Spring '26 rankings with live app results.
 - Personal voting history with guesses, results, bonus points, and totals.
@@ -41,14 +41,13 @@ https://whereisthiswilliams-production.up.railway.app/
 - Native Node HTTP server
 - Static HTML, CSS, and JavaScript frontend
 - JSON-file persistence through `data/db.json`
-- Optional Resend email delivery for production verification codes
 - Railway-ready deployment through `npm start`
 
 ## Project Structure
 
 ```text
 .
-|-- index.html          # Player profile, verification, reminders, and guessing flow
+|-- index.html          # Player profile, reminders, and guessing flow
 |-- leaderboard.html    # Ranked table across imported and current results
 |-- history.html        # Current player's saved voting history
 |-- podium.html         # Term winners gallery
@@ -77,7 +76,7 @@ Open:
 http://localhost:3000
 ```
 
-In development, verification codes are returned to the browser so the email verification flow can be tested without sending email.
+Player sign-in only requires a Williams email and Instagram username.
 
 ## Configuration
 
@@ -85,17 +84,13 @@ In development, verification codes are returned to the browser so the email veri
 | --- | --- | --- |
 | `PORT` | No | Server port. Railway sets this automatically. Defaults to `3000`. |
 | `ADMIN_TOKEN` | Yes for production | Private token required for the admin question form. Defaults to `change-me` locally. |
-| `NODE_ENV` | Yes for production | Set to `production` to hide verification codes from browser responses. |
-| `RESEND_API_KEY` | Yes for production email | Resend API key used to send verification codes. |
-| `EMAIL_FROM` | Recommended | Sender address for verification emails. Defaults to Resend onboarding sender. |
+| `NODE_ENV` | Recommended for production | Set to `production` for production deployments. |
 
 Example production configuration:
 
 ```bash
 ADMIN_TOKEN="use-a-long-private-token"
 NODE_ENV="production"
-RESEND_API_KEY="your-resend-api-key"
-EMAIL_FROM="Where Is This Williams <you@your-domain.edu>"
 ```
 
 ## Railway Deployment
@@ -131,7 +126,7 @@ Start the app with an `ADMIN_TOKEN`, then open:
 /admin.html
 ```
 
-Use the same token in the form to create or update a challenge. Each challenge needs an id, title, image path, answer options, correct answer, posted time, deadline, and optional bonus points.
+Use the same token in the form to create or update a challenge. Each challenge needs an id, title, image path, answer options, correct answer, posted time, voting deadline, reveal time, and optional bonus points.
 
 ## Data
 
@@ -147,7 +142,7 @@ The imported Spring '26 ranking sheet lives in:
 assests/spring26-ranking.csv
 ```
 
-On startup, the server imports that ranking sheet into `data/db.json` if imported leaders are not already present. Current player scores are merged with imported leaderboard rows by matching screen names.
+On startup, the server imports that ranking sheet into `data/db.json` if imported leaders are not already present. Current player scores are merged with imported leaderboard rows by matching usernames.
 
 ## Production Notes
 

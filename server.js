@@ -9,14 +9,14 @@ const dbPath = path.join(__dirname, "data", "db.json");
 const rankingCsvPath = path.join(__dirname, "assests", "spring26-ranking.csv");
 const port = Number(process.env.PORT || 3000);
 const adminToken = process.env.ADMIN_TOKEN || "change-me";
-const resendApiKey = process.env.RESEND_API_KEY || "";
-const emailFrom = process.env.EMAIL_FROM || "Where Is This Williams <onboarding@resend.dev>";
 
 const mimeTypes = {
   ".avif": "image/avif",
   ".css": "text/css; charset=utf-8",
   ".csv": "text/csv; charset=utf-8",
   ".html": "text/html; charset=utf-8",
+  ".jpeg": "image/jpeg",
+  ".jpg": "image/jpeg",
   ".js": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
   ".png": "image/png",
@@ -88,19 +88,13 @@ async function handleApi(req, res, url) {
   if (req.method === "POST" && url.pathname === "/api/players") {
     const player = normalizePlayer(await readJson(req));
     const existingPlayer = db.players[player.unix];
-    const keepsVerification = existingPlayer?.verified && existingPlayer.email === player.email;
-    const verificationCode = keepsVerification ? existingPlayer.verificationCode : createVerificationCode();
     db.players[player.unix] = {
       ...existingPlayer,
       ...player,
-      verified: Boolean(keepsVerification),
-      verificationCode,
-      verificationSentAt: keepsVerification
-        ? existingPlayer.verificationSentAt
-        : new Date().toISOString(),
+      referredBy: player.referredBy || existingPlayer?.referredBy,
+      verified: true,
     };
     await writeDb(db);
-    if (!keepsVerification) await sendVerificationEmail(db.players[player.unix]);
     sendJson(res, 200, { player: publicPlayer(db.players[player.unix]) });
     return;
   }
@@ -108,40 +102,6 @@ async function handleApi(req, res, url) {
   if (req.method === "GET" && url.pathname.startsWith("/api/players/")) {
     const unix = decodeURIComponent(url.pathname.split("/").at(-1)).toLowerCase();
     sendJson(res, 200, { player: db.players[unix] ? publicPlayer(db.players[unix]) : null });
-    return;
-  }
-
-  if (req.method === "POST" && url.pathname === "/api/resend-verification") {
-    const body = await readJson(req);
-    const unix = String(body.unix || "").trim().toLowerCase();
-    const player = db.players[unix];
-
-    if (!player) throw httpError(404, "Player not found.");
-    if (player.verified) throw httpError(400, "This player is already verified.");
-
-    const secondsLeft = secondsUntilResend(player);
-    if (secondsLeft > 0) throw httpError(429, `Please wait ${secondsLeft}s before requesting another code.`);
-
-    player.verificationCode = createVerificationCode();
-    player.verificationSentAt = new Date().toISOString();
-    await writeDb(db);
-    await sendVerificationEmail(player);
-    sendJson(res, 200, { player: publicPlayer(player) });
-    return;
-  }
-
-  if (req.method === "POST" && url.pathname === "/api/verify-player") {
-    const body = await readJson(req);
-    const unix = String(body.unix || "").trim().toLowerCase();
-    const code = String(body.code || "").trim();
-    const player = db.players[unix];
-
-    if (!player) throw httpError(404, "Player not found.");
-    if (player.verificationCode !== code) throw httpError(400, "Verification code is incorrect.");
-
-    player.verified = true;
-    await writeDb(db);
-    sendJson(res, 200, { player: publicPlayer(player) });
     return;
   }
 
@@ -161,8 +121,14 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (req.method === "GET" && url.pathname.startsWith("/api/achievements/")) {
+    const unix = decodeURIComponent(url.pathname.split("/").at(-1)).toLowerCase();
+    sendJson(res, 200, { achievements: buildAchievements(db, unix), cheers: buildCheers(db, unix) });
+    return;
+  }
+
   if (req.method === "GET" && url.pathname === "/api/leaderboard") {
-    sendJson(res, 200, { columns: scoreColumns(db), leaders: buildLeaderboard(db) });
+    sendJson(res, 200, { leaders: buildLeaderboard(db) });
     return;
   }
 
@@ -213,34 +179,45 @@ function createVote(db, body) {
   const unix = String(body.unix || "").trim().toLowerCase();
   const questionId = String(body.questionId || "").trim();
   const choice = String(body.choice || "").trim();
+  const feedbackText = String(body.feedbackText || "").trim().slice(0, 800);
   const question = db.questions.find((item) => item.id === questionId);
 
   if (!db.players[unix]) throw httpError(400, "Create a player profile first.");
   if (!db.players[unix].verified) throw httpError(403, "Verify your Williams email before voting.");
   if (!question) throw httpError(404, "Question not found.");
+  if (!isPosted(question)) throw httpError(400, "Voting has not opened for this photo yet.");
   if (isDeadlineOver(question)) throw httpError(400, "Voting is closed for this photo.");
   if (!question.options.includes(choice)) throw httpError(400, "Invalid choice.");
   if (db.votes.some((vote) => vote.unix === unix && vote.questionId === questionId)) {
     throw httpError(409, "This player already voted for this photo.");
   }
 
-  return { id: `${questionId}-${unix}`, unix, questionId, title: question.title, choice, answeredAt: new Date().toISOString() };
+  return {
+    id: `${questionId}-${unix}`,
+    unix,
+    questionId,
+    title: question.title,
+    choice,
+    feedbackText: question.kind === "feedback" ? feedbackText : undefined,
+    answeredAt: new Date().toISOString(),
+  };
 }
 
 function publicQuestion(question) {
-  const revealed = isDeadlineOver(question);
-  return { ...question, revealed, answer: revealed ? question.answer : null };
+  const revealed = isRevealOver(question);
+  return { ...question, closed: isDeadlineOver(question), revealed, answer: revealed && question.kind !== "feedback" ? question.answer : null };
 }
 
 function publicVote(db, vote) {
   const question = db.questions.find((item) => item.id === vote.questionId);
-  const revealed = question ? isDeadlineOver(question) : false;
-  const correct = Boolean(revealed && question && question.answer === vote.choice);
+  const revealed = question ? isRevealOver(question) : false;
+  const isFeedback = question?.kind === "feedback";
+  const correct = Boolean(!isFeedback && revealed && question && question.answer === vote.choice);
   return {
     ...vote,
     revealed,
     correct,
-    correctAnswer: revealed && question ? question.answer : null,
+    correctAnswer: !isFeedback && revealed && question ? question.answer : null,
     bonusPoints: question?.bonusPoints || 0,
     points: correct ? db.settings.basePoints + (question?.bonusPoints || 0) : 0,
   };
@@ -252,7 +229,7 @@ function buildLeaderboard(db) {
     return {
       ...player,
       points: votes.reduce((total, vote) => total + vote.points, 0),
-      scores: Object.fromEntries(votes.map((vote) => [vote.correctAnswer || vote.title, vote.points])),
+      finishedAt: latestAnsweredAt(votes),
     };
   });
   const currentByName = new Map(currentPlayers.map((player) => [normalizeUsername(player.screenName), player]));
@@ -265,35 +242,85 @@ function buildLeaderboard(db) {
       unix: match.unix,
       realName: match.realName,
       points: leader.points + match.points,
-      scores: mergeScores(leader.scores, match.scores),
+      finishedAt: match.finishedAt,
     };
   });
-  const leaders = [...imported, ...currentByName.values()].sort((a, b) => {
+  const ranked = [...imported, ...currentByName.values()]
+    .filter((leader) => leader.points > 0)
+    .sort((a, b) => {
     if (b.points !== a.points) return b.points - a.points;
     return (a.rank || Number.POSITIVE_INFINITY) - (b.rank || Number.POSITIVE_INFINITY);
   });
-  return leaders.filter((leader, index) => (leader.rank || index + 1) <= db.settings.leaderboardMaxRank);
+  const rankedWithPlaces = assignLeaderboardPlaces(ranked);
+  return rankedWithPlaces
+    .filter((leader) => leader.place <= db.settings.leaderboardMaxRank)
+    .map((leader) => ({
+      place: leader.place,
+      screenName: leader.screenName,
+      points: leader.points,
+    }));
 }
 
-function scoreColumns(db) {
-  const columns = new Set();
-  db.importedLeaders.forEach((leader) => Object.keys(leader.scores || {}).forEach((key) => columns.add(key)));
-  db.questions.forEach((question) => columns.add(question.answer));
-  return [...columns];
+function buildAchievements(db, unix) {
+  const votes = db.votes.filter((vote) => vote.unix === unix).map((vote) => publicVote(db, vote));
+  const questionVotes = votes.filter((vote) => {
+    const question = db.questions.find((item) => item.id === vote.questionId);
+    return question?.kind !== "feedback";
+  });
+  const feedbackVotes = votes.filter((vote) => {
+    const question = db.questions.find((item) => item.id === vote.questionId);
+    return question?.kind === "feedback";
+  });
+  const revealedVotes = questionVotes.filter((vote) => vote.revealed);
+  const correctVotes = revealedVotes.filter((vote) => vote.correct);
+  const questionCount = db.questions.filter((question) => question.kind !== "feedback").length;
+  const finalScore = votes.reduce((total, vote) => total + vote.points, 0);
+  const leaderboardEntry = buildLeaderboard(db).find((leader) => normalizeUsername(leader.screenName) === normalizeUsername(db.players[unix]?.screenName));
+  const firstCorrectIndex = questionVotes.findIndex((vote) => vote.correct);
+
+  return [
+    achievement("first-eye", "First Eye", "👁️", "Saved your first guess.", questionVotes.length >= 1),
+    achievement("campus-scout", "Campus Scout", "🗺️", "Answered 3 photos.", questionVotes.length >= 3),
+    achievement("full-tour", "Full Tour", "🎒", "Answered every location photo.", questionVotes.length >= questionCount && questionCount > 0),
+    achievement("speed-runner", "Speed Runner", "⚡", "Finished the whole run.", votes.length >= db.questions.length && db.questions.length > 0),
+    achievement("sharp-eye", "Sharp Eye", "🎯", "Guessed one revealed photo right.", correctVotes.length >= 1),
+    achievement("campus-eye", "Campus Eye", "🏛️", "Guessed 3 revealed photos right.", correctVotes.length >= 3),
+    achievement("perfect-round", "Perfect Round", "💎", "Got every revealed location right.", revealedVotes.length > 0 && correctVotes.length === revealedVotes.length),
+    achievement("comeback", "Comeback", "🔁", "Got one right after a nice try.", firstCorrectIndex > 0),
+    achievement("feedback-friend", "Feedback Friend", "💬", "Left final feedback.", feedbackVotes.some((vote) => vote.feedbackText)),
+    achievement("top-twelve", "Top 12 Glow", "⭐", "Reached the public Top 12 board.", Boolean(leaderboardEntry) && finalScore > 0),
+    achievement("top-mapper", "Top Mapper", "🧭", "Held the #1 rank.", leaderboardEntry?.place === 1 && finalScore > 0),
+  ];
+}
+
+function achievement(id, title, sticker, description, unlocked) {
+  return { id, title, sticker, description, unlocked };
+}
+
+function buildCheers(db, unix) {
+  const referralCount = Object.values(db.players).filter((player) => player.referredBy === unix).length;
+  return [
+    achievement("happy-anniversary", "Happy Anniversary!", "🎈", "Celebrate a Where Is This Williams milestone.", false),
+    { ...achievement("successful-referral", "Successful Referral!", "🎟️", "Invite new members with your referral link.", referralCount > 0), count: referralCount },
+  ];
 }
 
 function normalizePlayer(body) {
-  const unix = String(body.unix || "").trim().toLowerCase();
   const email = String(body.email || "").trim().toLowerCase();
-  const realName = String(body.realName || "").trim();
-  const screenName = String(body.screenName || "").trim();
-  if (!unix || !email || !realName || !screenName) throw httpError(400, "Unix, Williams email, real name, and screen name are required.");
+  const unix = String(body.unix || email.split("@")[0] || "").trim().toLowerCase();
+  const instagram = normalizeInstagram(body.instagram || body.screenName);
+  const referredBy = String(body.referredBy || "").trim().toLowerCase();
+  const realName = instagram;
+  const screenName = instagram;
+  if (!unix || !email || !instagram) throw httpError(400, "Williams email and Instagram username are required.");
   if (!email.endsWith("@williams.edu")) throw httpError(400, "Use a Williams email address.");
   return {
     unix,
     email,
     realName,
     screenName,
+    instagram,
+    referredBy: referredBy && referredBy !== unix ? referredBy : undefined,
     avatar: String(body.avatar || "💜"),
     avatarImage: typeof body.avatarImage === "string" ? body.avatarImage : undefined,
   };
@@ -305,49 +332,11 @@ function publicPlayer(player) {
     email: player.email,
     realName: player.realName,
     screenName: player.screenName,
+    instagram: player.instagram || player.screenName,
     avatar: player.avatar,
     avatarImage: player.avatarImage,
     verified: Boolean(player.verified),
-    verificationSentAt: player.verificationSentAt,
-    verificationCode: process.env.NODE_ENV === "production" ? undefined : player.verificationCode,
   };
-}
-
-function createVerificationCode() {
-  return String(Math.floor(100000 + Math.random() * 900000));
-}
-
-function secondsUntilResend(player) {
-  const sentAt = new Date(player.verificationSentAt || 0).getTime();
-  if (!sentAt) return 0;
-  return Math.max(0, Math.ceil((sentAt + 60000 - Date.now()) / 1000));
-}
-
-async function sendVerificationEmail(player) {
-  if (!resendApiKey) {
-    if (process.env.NODE_ENV === "production") throw httpError(500, "Email service is not configured.");
-    return;
-  }
-
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${resendApiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: emailFrom,
-      to: [player.email],
-      subject: "Your Where Is This Williams verification code",
-      text: `Your Where Is This Williams verification code is ${player.verificationCode}.`,
-      html: `<p>Your Where Is This Williams verification code is <strong>${player.verificationCode}</strong>.</p>`,
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw httpError(response.status, error.message || "Verification email could not be sent.");
-  }
 }
 
 function normalizeQuestion(body) {
@@ -358,6 +347,9 @@ function normalizeQuestion(body) {
   const options = Array.isArray(body.options) ? body.options.map(String).map((item) => item.trim()).filter(Boolean) : [];
   const postedAt = String(body.postedAt || "").trim();
   const deadlineAt = String(body.deadlineAt || "").trim();
+  const revealAt = String(body.revealAt || body.deadlineAt || "").trim();
+  const kind = String(body.kind || "question").trim();
+  const commentPrompt = String(body.commentPrompt || "").trim();
   const bonusPoints = Number(body.bonusPoints || 0);
 
   if (!id || !title || !image || !answer || options.length < 2 || !postedAt || !deadlineAt) {
@@ -365,7 +357,7 @@ function normalizeQuestion(body) {
   }
 
   if (!options.includes(answer)) options.unshift(answer);
-  return { id, title, image, postedAt, answer, options, bonusPoints, deadlineAt };
+  return { id, title, image, postedAt, answer, options, bonusPoints, deadlineAt, revealAt, kind, commentPrompt };
 }
 
 async function readRankingCsv() {
@@ -433,12 +425,43 @@ function mergeScores(seedScores = {}, voteScores = {}) {
   return merged;
 }
 
+function assignLeaderboardPlaces(leaders) {
+  let previousPoints = null;
+  let previousPlace = 0;
+  return leaders.map((leader, index) => {
+    const place = leader.points === previousPoints ? previousPlace : index + 1;
+    previousPoints = leader.points;
+    previousPlace = place;
+    return { ...leader, place };
+  });
+}
+
+function latestAnsweredAt(votes) {
+  return votes.reduce((latest, vote) => {
+    if (!vote.answeredAt) return latest;
+    if (!latest || new Date(vote.answeredAt) > new Date(latest)) return vote.answeredAt;
+    return latest;
+  }, null);
+}
+
 function isDeadlineOver(question) {
   return Date.now() >= new Date(question.deadlineAt).getTime();
 }
 
+function isPosted(question) {
+  return Date.now() >= new Date(question.postedAt).getTime();
+}
+
+function isRevealOver(question) {
+  return Date.now() >= new Date(question.revealAt || question.deadlineAt).getTime();
+}
+
+function normalizeInstagram(value) {
+  return String(value || "").trim().replace(/^@+/, "");
+}
+
 function normalizeUsername(username) {
-  return String(username || "").trim().toLowerCase();
+  return String(username || "").trim().replace(/^@+/, "");
 }
 
 async function readJson(req) {

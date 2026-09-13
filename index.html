@@ -15,8 +15,10 @@
         <nav class="site-nav" aria-label="Main navigation">
             <a href="leaderboard.html">Leaderboard</a>
             <a href="history.html">History</a>
+            <a href="achievements.html">Achievements</a>
             <a href="podium.html">Podium of champions</a>
             <a href="#about">About</a>
+            <button class="audio-toggle" id="audio-toggle" type="button" aria-pressed="false">Mute</button>
         </nav>
     </header>
 
@@ -35,39 +37,22 @@
                 </p>
                 <form class="player-card" id="player-form">
                     <label>
-                        Williams Unix
-                        <input id="unix-input" name="unix" type="text" autocomplete="username" required />
-                    </label>
-                    <label>
                         Williams email
                         <input id="email-input" name="email" type="email" autocomplete="email" placeholder="abc1@williams.edu" required />
                     </label>
                     <label>
-                        Real name
-                        <input id="real-name-input" name="realName" type="text" autocomplete="name" required />
-                    </label>
-                    <label>
-                        Screen name
-                        <input id="screen-name-input" name="screenName" type="text" required />
+                        Instagram username
+                        <input id="instagram-input" name="instagram" type="text" autocomplete="username" placeholder="@ephs_everywhere" required />
                     </label>
                     <button class="primary-button" type="submit">Save Player</button>
                 </form>
-                <p class="player-status" id="player-status">Save your player profile before guessing.</p>
-                <form class="verify-card hidden" id="verify-form">
-                    <label>
-                        Verification code
-                        <input id="verify-code-input" type="text" inputmode="numeric" autocomplete="one-time-code" required />
-                    </label>
-                    <button class="primary-button" type="submit">Verify Profile</button>
-                    <button class="secondary-button" id="resend-code-button" type="button" disabled>Resend code in 60s</button>
-                </form>
-                <p class="player-status hidden" id="verify-status"></p>
+                <p class="player-status" id="player-status">You can only play once, and I hope you have fun.</p>
                 <section class="profile-card hidden" id="profile-card" aria-label="Player profile">
                     <div class="profile-avatar" id="profile-avatar">WC</div>
                     <div>
                         <p class="eyebrow">Player Profile</p>
                         <strong id="profile-name">Screen name</strong>
-                        <span id="profile-meta">Williams Unix</span>
+                        <span id="profile-meta">Williams email</span>
                     </div>
                     <div class="avatar-tools">
                         <div class="avatar-options" aria-label="Choose a profile avatar">
@@ -86,7 +71,10 @@
                 </section>
                 <button class="secondary-button" id="reminder-button" type="button">Enable Vote Reminders</button>
                 <p class="player-status" id="reminder-status">Get a browser reminder when the next photo is posted.</p>
-                <button class="primary-button" id="start-button" type="button">Start Guessing</button>
+                <button class="primary-button map-start-button" id="start-button" type="button" aria-label="Start guessing">
+                    <span aria-hidden="true">🌎</span>
+                    <strong>Start</strong>
+                </button>
             </div>
         </section>
 
@@ -122,6 +110,7 @@
             <p class="eyebrow">Final score</p>
             <h2 id="final-score">0 points</h2>
             <p id="results-message"></p>
+            <div class="achievement-grid results-achievements" id="results-achievements"></div>
             <button class="primary-button" id="restart-button" type="button">Go to dashboard</button>
         </section>
 

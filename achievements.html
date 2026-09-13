@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Achievements | Where is this Williams College</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="about-site">
+        <a href="index.html" class="site-logo" aria-label="Where is this Williams home">
+            <img src="assests/photos/williamscollegelogo.avif" alt="Williams College" />
+        </a>
+
+        <nav class="site-nav" aria-label="Main navigation">
+            <a href="leaderboard.html">Leaderboard</a>
+            <a href="history.html">History</a>
+            <a href="achievements.html" aria-current="page">Achievements</a>
+            <a href="podium.html">Podium of champions</a>
+            <a href="index.html#about">About</a>
+        </nav>
+    </header>
+
+    <main class="app-shell">
+        <section class="dashboard-panel page-panel achievements-page" id="achievements">
+            <header class="achievements-header">
+                <div>
+                    <p class="eyebrow">Sticker Collection</p>
+                    <h1 id="achievement-count">Achievements</h1>
+                </div>
+            </header>
+            <div class="achievement-grid" id="achievement-list"></div>
+            <section class="cheers-section" aria-label="Cheers collection">
+                <header class="achievements-header">
+                    <div>
+                        <p class="eyebrow">Community</p>
+                        <h1 id="cheers-count">Cheers</h1>
+                    </div>
+                </header>
+                <div class="achievement-grid" id="cheers-list"></div>
+                <div class="referral-card" id="referral-card"></div>
+            </section>
+        </section>
+    </main>
+    <script src="app.js"></script>
+</body>
+</html>

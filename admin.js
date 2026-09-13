@@ -12,6 +12,7 @@ form.addEventListener("submit", async (event) => {
     answer: document.querySelector("#admin-answer").value.trim(),
     postedAt: document.querySelector("#admin-posted").value,
     deadlineAt: document.querySelector("#admin-deadline").value,
+    revealAt: document.querySelector("#admin-reveal").value,
     bonusPoints: Number(document.querySelector("#admin-bonus").value || 0),
   };
 
