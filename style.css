@@ -13,6 +13,7 @@
 
 * {
     box-sizing: border-box;
+    min-width: 0;
 }
 
 html {
@@ -69,6 +70,7 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
+    min-width: 0;
 }
 
 .site-nav a {
@@ -76,8 +78,10 @@ body {
     color: var(--ink);
     font-size: 0.9rem;
     font-weight: 800;
+    line-height: 1.15;
     text-decoration: none;
     border-radius: 8px;
+    white-space: nowrap;
 }
 
 .audio-toggle {
@@ -90,6 +94,8 @@ body {
     font: inherit;
     font-size: 0.86rem;
     font-weight: 900;
+    line-height: 1.15;
+    white-space: nowrap;
     cursor: pointer;
 }
 
@@ -285,16 +291,22 @@ body {
     background: white;
     border: 1px solid var(--border);
     border-radius: 8px;
+    overflow: hidden;
+    overflow-wrap: anywhere;
 }
 
 .admin-stat-card strong {
     color: var(--purple);
     font-size: clamp(1.7rem, 4vw, 2.5rem);
+    line-height: 1;
+    overflow-wrap: anywhere;
 }
 
 .admin-stat-card span {
     color: var(--muted);
     font-weight: 900;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
 }
 
 .admin-stats-table {
@@ -563,6 +575,9 @@ h2 {
     border-radius: 8px;
     font: inherit;
     font-weight: 800;
+    line-height: 1.18;
+    overflow-wrap: anywhere;
+    white-space: normal;
     cursor: pointer;
 }
 
@@ -615,6 +630,8 @@ h2 {
     min-width: 0;
     color: white;
     font-size: 1.15rem;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
     text-align: left;
 }
 
@@ -700,6 +717,8 @@ h2 {
     background: transparent;
     border: 0;
     border-radius: 8px;
+    overflow: hidden;
+    overflow-wrap: anywhere;
 }
 
 .achievement-card span {
@@ -733,24 +752,31 @@ h2 {
 }
 
 .achievement-card strong {
+    width: 100%;
     color: white;
     font-size: clamp(1rem, 2.6vw, 1.35rem);
-    line-height: 1.12;
+    line-height: 1.16;
+    overflow-wrap: anywhere;
+    hyphens: auto;
 }
 
 .achievement-card em {
+    width: 100%;
     max-width: 170px;
     color: rgba(255, 255, 255, 0.78);
     font-size: 0.82rem;
     font-style: normal;
     line-height: 1.35;
+    overflow-wrap: anywhere;
 }
 
 .admin-sticker-card small {
     color: rgba(255, 255, 255, 0.88);
     font-size: 0.76rem;
     font-weight: 900;
+    line-height: 1.2;
     text-transform: uppercase;
+    overflow-wrap: anywhere;
 }
 
 .achievement-card.locked {
@@ -1046,12 +1072,16 @@ h2 {
 
 .winner-card strong {
     color: var(--ink);
+    line-height: 1.18;
+    overflow-wrap: anywhere;
 }
 
 .winner-card em {
     color: var(--purple);
     font-style: normal;
     font-weight: 900;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
 }
 
 .table-wrap {
@@ -1076,6 +1106,8 @@ h2 {
     border-bottom: 1px solid var(--border);
     text-align: left;
     vertical-align: top;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
 }
 
 .history-table th {
@@ -1304,6 +1336,11 @@ h2 {
         font-size: 1rem;
     }
 
+    .site-nav a,
+    .audio-toggle {
+        max-width: 72vw;
+    }
+
     .answers {
         grid-template-columns: 1fr;
     }
@@ -1339,21 +1376,28 @@ h2 {
     }
 
     .achievement-card {
-        min-height: 150px;
-        padding: 6px;
+        min-height: 174px;
+        padding: 8px 6px;
+        gap: 8px;
     }
 
     .achievement-card span {
+        width: min(100%, 132px);
         border-width: 7px;
         border-radius: 18px;
     }
 
     .achievement-card strong {
-        font-size: 0.95rem;
+        font-size: 0.9rem;
     }
 
     .achievement-card em {
-        font-size: 0.76rem;
+        font-size: 0.72rem;
+        line-height: 1.25;
+    }
+
+    .admin-sticker-card small {
+        font-size: 0.68rem;
     }
 
     .referral-actions {
@@ -1449,6 +1493,7 @@ h2 {
 
     .history-table td {
         display: flex;
+        align-items: flex-start;
         justify-content: space-between;
         gap: 16px;
         padding: 9px 0;
@@ -1461,10 +1506,12 @@ h2 {
 
     .history-table td::before {
         flex: 0 0 auto;
+        max-width: 42%;
         color: var(--purple);
         font-size: 0.72rem;
         font-weight: 900;
         text-transform: uppercase;
+        overflow-wrap: anywhere;
     }
 
     .leaderboard-table td:nth-child(1)::before { content: "Rank"; }
@@ -1517,7 +1564,11 @@ h2 {
     }
 
     .achievement-card span {
-        width: min(100%, 128px);
+        width: min(100%, 118px);
+    }
+
+    .achievement-card {
+        min-height: 180px;
     }
 
     .site-nav a,
