@@ -175,6 +175,19 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (req.method === "GET" && url.pathname === "/api/admin/player-achievements") {
+    requireAdmin(req);
+    const lookup = String(url.searchParams.get("player") || "").trim();
+    const player = findPlayer(db, lookup);
+    if (!player) throw httpError(404, "Player not found.");
+    sendJson(res, 200, {
+      player: publicPlayer(player),
+      achievements: buildAchievements(db, player.unix),
+      cheers: buildCheers(db, player.unix),
+    });
+    return;
+  }
+
   if (req.method === "POST" && url.pathname === "/api/admin/questions") {
     requireAdmin(req);
     const question = normalizeQuestion(await readJson(req));
@@ -365,6 +378,16 @@ function buildCheers(db, unix) {
     achievement("happy-anniversary", "Happy Anniversary!", "🎈", "Celebrate a Where Is This Williams milestone.", false),
     { ...achievement("successful-referral", "Successful Referral!", "🎟️", "Invite new members with your referral link.", referralCount > 0), count: referralCount },
   ];
+}
+
+function findPlayer(db, lookup) {
+  const normalized = normalizeUsername(lookup).toLowerCase();
+  if (!normalized) return null;
+  return Object.values(db.players || {}).find((player) => (
+    player.unix === normalized
+    || String(player.email || "").toLowerCase() === normalized
+    || normalizeUsername(player.instagram || player.screenName).toLowerCase() === normalized
+  ));
 }
 
 async function buildAdminStats(db) {

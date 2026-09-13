@@ -467,35 +467,25 @@ function renderReferralCard() {
     <strong>Your referral link</strong>
     <span>${escapeHtml(url)}</span>
     <div class="referral-actions" aria-label="Share your referral link">
-      <button class="share-button primary-share" type="button" data-native-share="${escapeHtml(url)}">Share</button>
-      <a class="share-button" href="mailto:?subject=Where%20Is%20This%20Williams&body=${encodedMessage}">Email</a>
-      <a class="share-button" href="https://wa.me/?text=${encodedMessage}" target="_blank" rel="noopener">WhatsApp</a>
-      <a class="share-button" href="https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}" target="_blank" rel="noopener">Facebook</a>
-      <a class="share-button" href="https://twitter.com/intent/tweet?text=${encodedMessage}" target="_blank" rel="noopener">Twitter/X</a>
-      <a class="share-button" href="https://groupme.com/share?text=${encodedMessage}" target="_blank" rel="noopener">GroupMe</a>
-      <button class="share-button" type="button" data-copy-share="Snapchat">Snapchat</button>
-      <button class="share-button" type="button" data-copy-share="Instagram">Instagram</button>
-      <a class="share-button" href="sms:?body=${encodedMessage}">Messages</a>
+      <a class="share-button" href="mailto:?subject=Where%20Is%20This%20Williams&body=${encodedMessage}" title="Email" aria-label="Share by email"><span aria-hidden="true">✉</span></a>
+      <a class="share-button" href="https://wa.me/?text=${encodedMessage}" target="_blank" rel="noopener" title="WhatsApp" aria-label="Share on WhatsApp">${shareIcon("web.whatsapp.com", "WhatsApp")}</a>
+      <a class="share-button" href="https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}" target="_blank" rel="noopener" title="Facebook" aria-label="Share on Facebook">${shareIcon("facebook.com", "Facebook")}</a>
+      <a class="share-button" href="https://twitter.com/intent/tweet?text=${encodedMessage}" target="_blank" rel="noopener" title="Twitter/X" aria-label="Share on Twitter or X">${shareIcon("x.com", "Twitter/X")}</a>
+      <a class="share-button" href="https://groupme.com/share?text=${encodedMessage}" target="_blank" rel="noopener" title="GroupMe" aria-label="Share on GroupMe">${shareIcon("groupme.com", "GroupMe")}</a>
+      <button class="share-button" type="button" data-copy-share="Snapchat" title="Snapchat" aria-label="Copy link for Snapchat">${shareIcon("snapchat.com", "Snapchat")}</button>
+      <button class="share-button" type="button" data-copy-share="Instagram" title="Instagram" aria-label="Copy link for Instagram">${shareIcon("instagram.com", "Instagram")}</button>
+      <a class="share-button" href="sms:?body=${encodedMessage}" title="Messages" aria-label="Share by text message"><span aria-hidden="true">💬</span></a>
     </div>
     <small id="referral-share-status">Share your link so friends can join from your invite.</small>
   `;
   bindReferralShareButtons(url);
 }
 
-function bindReferralShareButtons(url) {
-  referralCard.querySelector("[data-native-share]")?.addEventListener("click", async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: "Where Is This Williams", text: "Join me on Where Is This Williams.", url });
-        setReferralShareStatus("Share sheet opened.");
-        return;
-      } catch (error) {
-        if (error.name === "AbortError") return;
-      }
-    }
-    await copyReferralLink(url);
-  });
+function shareIcon(domain, label) {
+  return `<img src="https://www.google.com/s2/favicons?domain=${domain}&sz=64" alt="" aria-hidden="true" /><span class="visually-hidden">${escapeHtml(label)}</span>`;
+}
 
+function bindReferralShareButtons(url) {
   referralCard.querySelectorAll("[data-copy-share]").forEach((button) => {
     button.addEventListener("click", async () => {
       await copyReferralLink(url);

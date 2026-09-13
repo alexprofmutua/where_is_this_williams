@@ -73,6 +73,42 @@
                 </table>
             </div>
         </section>
+
+        <section class="dashboard-panel page-panel achievements-page">
+            <div>
+                <p class="eyebrow">Admin Collection View</p>
+                <h1>Player stickers</h1>
+                <p class="page-copy">
+                    Enter a Williams email, unix, or Instagram username to view that player's Achievements and Cheers.
+                </p>
+            </div>
+            <div class="admin-lookup-row">
+                <label>
+                    Player lookup
+                    <input id="admin-player-lookup" type="text" placeholder="alem_prof or amm22@williams.edu" />
+                </label>
+                <button class="secondary-button" id="load-player-achievements-button" type="button">Load Collection</button>
+            </div>
+            <p class="player-status" id="player-achievements-status"></p>
+            <section class="admin-collection-panel hidden" id="admin-collection-panel">
+                <header class="achievements-header">
+                    <div>
+                        <p class="eyebrow" id="admin-player-meta">Player</p>
+                        <h1 id="admin-achievement-count">Achievements</h1>
+                    </div>
+                </header>
+                <div class="achievement-grid" id="admin-achievement-list"></div>
+                <section class="cheers-section" aria-label="Admin cheers collection">
+                    <header class="achievements-header">
+                        <div>
+                            <p class="eyebrow">Community</p>
+                            <h1 id="admin-cheers-count">Cheers</h1>
+                        </div>
+                    </header>
+                    <div class="achievement-grid" id="admin-cheers-list"></div>
+                </section>
+            </section>
+        </section>
     </main>
     <script src="app.js"></script>
     <script src="admin.js"></script>

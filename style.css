@@ -287,6 +287,34 @@ body {
     min-width: 420px;
 }
 
+.admin-lookup-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.admin-lookup-row label {
+    display: grid;
+    gap: 6px;
+    color: white;
+    font-size: 0.82rem;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.admin-lookup-row input {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    color: var(--ink);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font: inherit;
+    text-transform: none;
+}
+
 .player-card label,
 .verify-card label {
     display: grid;
@@ -772,30 +800,48 @@ h2 {
 }
 
 .share-button {
-    min-height: 38px;
+    width: 44px;
+    height: 44px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0 12px;
+    padding: 0;
     color: var(--ink);
     background: rgba(255, 255, 255, 0.9);
     border: 0;
-    border-radius: 8px;
+    border-radius: 999px;
     font: inherit;
-    font-size: 0.86rem;
+    font-size: 1.25rem;
     font-weight: 900;
     text-decoration: none;
     cursor: pointer;
 }
 
-.share-button.primary-share {
-    color: white;
-    background: var(--purple);
+.share-button:hover,
+.share-button:focus-visible {
+    transform: translateY(-1px);
+    outline: 3px solid rgba(243, 196, 77, 0.75);
+}
+
+.share-button img {
+    width: 24px;
+    height: 24px;
+    display: block;
+    object-fit: contain;
 }
 
 .referral-card small {
     color: rgba(255, 255, 255, 0.78);
     line-height: 1.35;
+}
+
+.visually-hidden {
+    width: 1px;
+    height: 1px;
+    position: absolute;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
 }
 
 @keyframes sticker-pop {
@@ -1207,6 +1253,10 @@ h2 {
     }
 
     .admin-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-lookup-row {
         grid-template-columns: 1fr;
     }
 
