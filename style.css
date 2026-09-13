@@ -36,6 +36,7 @@ body {
 }
 
 .about-site {
+    width: min(1180px, 100%);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -101,19 +102,32 @@ body {
     outline: none;
 }
 
-@media (max-width: 650px) {
+@media (max-width: 760px) {
     .about-site {
-        align-items: flex-start;
-        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
     }
 
     .site-logo {
-        width: 82px;
-        height: 58px;
+        width: 74px;
+        height: 52px;
     }
 
     .site-nav {
-        flex-wrap: wrap;
+        width: 100%;
+        overflow-x: auto;
+        gap: 8px;
+        padding-bottom: 4px;
+        scrollbar-width: thin;
+    }
+
+    .site-nav a,
+    .audio-toggle {
+        flex: 0 0 auto;
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
     }
 }
 
@@ -1222,26 +1236,56 @@ h2 {
 @media (max-width: 650px) {
     body {
         padding: 12px;
+        place-items: start center;
     }
 
     .app-shell {
+        width: 100%;
         gap: 16px;
     }
 
     .intro,
+    .quiz,
     .results,
     .about-panel,
     .dashboard-panel {
-        padding: 22px;
+        padding: 18px;
     }
 
     .quiz-topbar {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .quiz-topbar > div,
+    .timer-panel,
+    .score-pill {
+        width: 100%;
+        justify-self: stretch;
     }
 
     .score-pill {
-        grid-column: 1 / -1;
-        grid-row: 2;
+        min-height: 54px;
+        border-radius: 8px;
+    }
+
+    .timer-panel {
+        min-width: 0;
+        padding: 12px;
+    }
+
+    #timer {
+        font-size: clamp(3rem, 18vw, 5rem);
+    }
+
+    .photo-card img {
+        aspect-ratio: 4 / 3;
+    }
+
+    .answer-button {
+        min-height: 58px;
+        padding: 12px 14px;
+        font-size: 1rem;
     }
 
     .answers {
@@ -1275,6 +1319,34 @@ h2 {
 
     .achievement-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .achievement-card {
+        min-height: 150px;
+        padding: 6px;
+    }
+
+    .achievement-card span {
+        border-width: 7px;
+        border-radius: 18px;
+    }
+
+    .achievement-card strong {
+        font-size: 0.95rem;
+    }
+
+    .achievement-card em {
+        font-size: 0.76rem;
+    }
+
+    .referral-actions {
+        gap: 10px;
+    }
+
+    .share-button {
+        width: 46px;
+        height: 46px;
     }
 
     .results-achievements {
@@ -1290,15 +1362,141 @@ h2 {
     .intro,
     .results {
         grid-template-columns: 1fr;
+        min-height: auto;
+        gap: 18px;
     }
 
     .intro-brand {
         grid-column: 1;
         grid-row: auto;
-        max-width: 340px;
+        max-width: min(260px, 78vw);
     }
 
     .intro-content {
         grid-column: 1;
+        width: 100%;
+        gap: 16px;
+    }
+
+    h1 {
+        font-size: clamp(2.65rem, 16vw, 4.5rem);
+    }
+
+    h2 {
+        font-size: clamp(2rem, 12vw, 3.5rem);
+    }
+
+    .page-panel h1,
+    .achievements-header h1 {
+        font-size: clamp(1.9rem, 10vw, 3rem);
+    }
+
+    .profile-card {
+        grid-template-columns: 1fr;
+        justify-items: start;
+    }
+
+    .profile-avatar {
+        width: 68px;
+        height: 68px;
+    }
+
+    .table-wrap {
+        overflow: visible;
+    }
+
+    .history-table {
+        min-width: 0;
+        display: block;
+        background: transparent;
+        border: 0;
+    }
+
+    .history-table thead {
+        display: none;
+    }
+
+    .history-table tbody,
+    .history-table tr,
+    .history-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .history-table tr {
+        margin-bottom: 12px;
+        padding: 12px;
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+    }
+
+    .history-table td {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 9px 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .history-table td:last-child {
+        border-bottom: 0;
+    }
+
+    .history-table td::before {
+        flex: 0 0 auto;
+        color: var(--purple);
+        font-size: 0.72rem;
+        font-weight: 900;
+        text-transform: uppercase;
+    }
+
+    .leaderboard-table td:nth-child(1)::before { content: "Rank"; }
+    .leaderboard-table td:nth-child(2)::before { content: "Instagram"; }
+    .leaderboard-table td:nth-child(3)::before { content: "Final score"; }
+
+    .admin-stats-table td:nth-child(1)::before { content: "Page"; }
+    .admin-stats-table td:nth-child(2)::before { content: "Visits"; }
+
+    .history-table:not(.leaderboard-table):not(.admin-stats-table) td:nth-child(1)::before { content: "Photo"; }
+    .history-table:not(.leaderboard-table):not(.admin-stats-table) td:nth-child(2)::before { content: "Your guess"; }
+    .history-table:not(.leaderboard-table):not(.admin-stats-table) td:nth-child(3)::before { content: "Correct location"; }
+    .history-table:not(.leaderboard-table):not(.admin-stats-table) td:nth-child(4)::before { content: "Result"; }
+    .history-table:not(.leaderboard-table):not(.admin-stats-table) td:nth-child(5)::before { content: "Base"; }
+    .history-table:not(.leaderboard-table):not(.admin-stats-table) td:nth-child(6)::before { content: "Bonus"; }
+    .history-table:not(.leaderboard-table):not(.admin-stats-table) td:nth-child(7)::before { content: "Total"; }
+    .history-table:not(.leaderboard-table):not(.admin-stats-table) td:nth-child(8)::before { content: "Date"; }
+}
+
+@media (max-width: 420px) {
+    body {
+        padding: 8px;
+    }
+
+    .intro,
+    .quiz,
+    .results,
+    .about-panel,
+    .dashboard-panel {
+        padding: 14px;
+    }
+
+    .achievement-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .achievement-card span {
+        width: min(100%, 128px);
+    }
+
+    .site-nav a,
+    .audio-toggle {
+        font-size: 0.82rem;
+    }
+
+    .history-table td {
+        flex-direction: column;
+        gap: 4px;
     }
 }
