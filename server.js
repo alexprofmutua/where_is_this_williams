@@ -88,14 +88,29 @@ async function handleApi(req, res, url) {
   if (req.method === "POST" && url.pathname === "/api/players") {
     const player = normalizePlayer(await readJson(req));
     const existingPlayer = db.players[player.unix];
-    db.players[player.unix] = {
-      ...existingPlayer,
-      ...player,
-      referredBy: player.referredBy || existingPlayer?.referredBy,
-      verified: true,
-    };
+    if (existingPlayer && (existingPlayer.instagram || existingPlayer.screenName) !== player.instagram) {
+      throw httpError(409, "This Williams email is already registered. Enter the Instagram username exactly as it was first saved.");
+    }
+
+    db.players[player.unix] = existingPlayer
+      ? {
+          ...existingPlayer,
+          email: player.email,
+          realName: player.realName,
+          screenName: player.screenName,
+          instagram: player.instagram,
+          avatar: player.avatar ?? existingPlayer.avatar,
+          avatarImage: player.avatarImage === null ? undefined : player.avatarImage ?? existingPlayer.avatarImage,
+          verified: true,
+        }
+      : {
+          ...player,
+          avatar: player.avatar || "💜",
+          referredBy: player.referredBy,
+          verified: true,
+        };
     await writeDb(db);
-    sendJson(res, 200, { player: publicPlayer(db.players[player.unix]) });
+    sendJson(res, 200, { player: publicPlayer(db.players[player.unix]), created: !existingPlayer });
     return;
   }
 
@@ -321,8 +336,8 @@ function normalizePlayer(body) {
     screenName,
     instagram,
     referredBy: referredBy && referredBy !== unix ? referredBy : undefined,
-    avatar: String(body.avatar || "💜"),
-    avatarImage: typeof body.avatarImage === "string" ? body.avatarImage : undefined,
+    avatar: Object.hasOwn(body, "avatar") ? String(body.avatar || "💜") : undefined,
+    avatarImage: Object.hasOwn(body, "avatarImage") ? (typeof body.avatarImage === "string" ? body.avatarImage : null) : undefined,
   };
 }
 

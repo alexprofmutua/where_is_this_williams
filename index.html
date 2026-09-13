@@ -36,6 +36,10 @@
                     Guess the campus location before the photo deadline closes. Correct answers earn points after the reveal.
                 </p>
                 <form class="player-card" id="player-form">
+                    <div class="player-form-copy">
+                        <h2 id="player-form-title">Create profile or log in</h2>
+                        <p>Use your Williams email and Instagram username. Returning players should enter the same details they used the first time.</p>
+                    </div>
                     <label>
                         Williams email
                         <input id="email-input" name="email" type="email" autocomplete="email" placeholder="abc1@williams.edu" required />
@@ -44,7 +48,7 @@
                         Instagram username
                         <input id="instagram-input" name="instagram" type="text" autocomplete="username" placeholder="@ephs_everywhere" required />
                     </label>
-                    <button class="primary-button" type="submit">Save Player</button>
+                    <button class="primary-button" id="save-player-button" type="submit">Create / Log In</button>
                 </form>
                 <p class="player-status" id="player-status">You can only play once, and I hope you have fun.</p>
                 <section class="profile-card hidden" id="profile-card" aria-label="Player profile">
@@ -68,6 +72,7 @@
                             <input id="avatar-upload" type="file" accept="image/*" />
                         </label>
                     </div>
+                    <button class="secondary-button profile-switch" id="switch-player-button" type="button">Use different player</button>
                 </section>
                 <button class="secondary-button" id="reminder-button" type="button">Enable Vote Reminders</button>
                 <p class="player-status" id="reminder-status">Get a browser reminder when the next photo is posted.</p>

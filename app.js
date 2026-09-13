@@ -19,14 +19,17 @@ const audioToggle = document.querySelector("#audio-toggle");
 const aboutLink = document.querySelector('a[href="#about"]');
 const aboutPanel = document.querySelector("#about");
 const playerForm = document.querySelector("#player-form");
+const playerFormTitle = document.querySelector("#player-form-title");
 const emailInput = document.querySelector("#email-input");
 const instagramInput = document.querySelector("#instagram-input");
+const savePlayerButton = document.querySelector("#save-player-button");
 const playerStatus = document.querySelector("#player-status");
 const profileCard = document.querySelector("#profile-card");
 const profileAvatar = document.querySelector("#profile-avatar");
 const profileName = document.querySelector("#profile-name");
 const profileMeta = document.querySelector("#profile-meta");
 const avatarUpload = document.querySelector("#avatar-upload");
+const switchPlayerButton = document.querySelector("#switch-player-button");
 const reminderButton = document.querySelector("#reminder-button");
 const reminderStatus = document.querySelector("#reminder-status");
 const questionCount = document.querySelector("#question-count");
@@ -66,6 +69,7 @@ async function init() {
 
 function bindEvents() {
   playerForm?.addEventListener("submit", savePlayer);
+  switchPlayerButton?.addEventListener("click", showLoginForm);
   document.querySelectorAll("[data-avatar]").forEach((button) => {
     button.addEventListener("click", () => saveAvatar(button.dataset.avatar));
   });
@@ -108,26 +112,32 @@ async function savePlayer(event) {
     instagram,
     screenName: instagram,
     referredBy: localStorage.getItem(REFERRER_KEY) || "",
-    avatar: activePlayer?.avatar || "💜",
-    avatarImage: activePlayer?.avatarImage,
   };
+  if (activePlayer?.avatar) payload.avatar = activePlayer.avatar;
+  if (activePlayer?.avatarImage) payload.avatarImage = activePlayer.avatarImage;
+
   try {
-    const { player } = await apiPost("/api/players", payload);
+    setPlayerFormBusy(true);
+    const { player, created } = await apiPost("/api/players", payload);
     localStorage.setItem(ACTIVE_UNIX_KEY, player.unix);
     activePlayer = player;
-    syncPlayerView();
+    syncPlayerView(created ? "created" : "login");
     await renderPageData();
   } catch (error) {
     playerStatus.textContent = error.message;
+  } finally {
+    setPlayerFormBusy(false);
   }
 }
 
-function syncPlayerView() {
+function syncPlayerView(mode = "saved") {
   if (!playerForm || !profileCard || !startButton || !playerStatus) return;
 
   if (!activePlayer) {
     playerForm.classList.remove("hidden");
     profileCard.classList.add("hidden");
+    if (playerFormTitle) playerFormTitle.textContent = "Create profile or log in";
+    if (savePlayerButton) savePlayerButton.textContent = "Create / Log In";
     startButton.disabled = true;
     playerStatus.textContent = "You can only play once, and I hope you have fun.";
     return;
@@ -137,9 +147,28 @@ function syncPlayerView() {
   instagramInput.value = activePlayer.instagram || activePlayer.screenName || "";
   playerForm.classList.add("hidden");
   profileCard.classList.remove("hidden");
-  playerStatus.textContent = `Playing as @${activePlayer.instagram || activePlayer.screenName}. Each photo can only be answered once.`;
+  const actionText = mode === "created" ? "Profile created." : mode === "login" ? "Welcome back." : "Profile saved.";
+  playerStatus.textContent = `${actionText} Playing as @${activePlayer.instagram || activePlayer.screenName}. Each photo can only be answered once.`;
   renderProfile();
   syncEventWindow();
+}
+
+function showLoginForm() {
+  localStorage.removeItem(ACTIVE_UNIX_KEY);
+  activePlayer = null;
+  playerForm?.classList.remove("hidden");
+  profileCard?.classList.add("hidden");
+  if (playerFormTitle) playerFormTitle.textContent = "Log in or create another profile";
+  if (savePlayerButton) savePlayerButton.textContent = "Continue";
+  if (playerStatus) playerStatus.textContent = "Enter the same Williams email and Instagram username to return to an existing profile.";
+  if (startButton) startButton.disabled = true;
+  emailInput?.focus();
+}
+
+function setPlayerFormBusy(isBusy) {
+  if (!savePlayerButton) return;
+  savePlayerButton.disabled = isBusy;
+  savePlayerButton.textContent = isBusy ? "Checking..." : "Create / Log In";
 }
 
 function renderProfile() {
@@ -161,7 +190,7 @@ function renderProfile() {
 
 async function saveAvatar(avatar) {
   if (!activePlayer) return;
-  const { player } = await apiPost("/api/players", { ...activePlayer, avatar, avatarImage: undefined });
+  const { player } = await apiPost("/api/players", { ...activePlayer, avatar, avatarImage: null });
   activePlayer = player;
   renderProfile();
 }
