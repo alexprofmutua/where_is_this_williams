@@ -148,7 +148,7 @@ async function handleApi(req, res, url) {
   }
 
   if (req.method === "GET" && url.pathname === "/api/podium") {
-    sendJson(res, 200, { terms: db.termWinners || [] });
+    sendJson(res, 200, { terms: (db.termWinners || []).filter((term) => term.finalized) });
     return;
   }
 

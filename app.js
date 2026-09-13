@@ -441,6 +441,16 @@ function renderReferralCard() {
 async function renderPodium() {
   if (!championGallery) return;
   const { terms } = await apiGet("/api/podium");
+  if (!terms.length) {
+    championGallery.innerHTML = `
+      <section class="empty-podium">
+        <strong>Final winners have not been released yet.</strong>
+        <p>The Podium of Champions will show first, second, and third place only after the competition is finalized.</p>
+      </section>
+    `;
+    return;
+  }
+
   championGallery.innerHTML = terms
     .map((term) => {
       const winners = [...term.winners].sort((a, b) => ({ 2: 1, 1: 2, 3: 3 })[a.place] - ({ 2: 1, 1: 2, 3: 3 })[b.place]);

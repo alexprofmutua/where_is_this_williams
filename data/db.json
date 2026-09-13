@@ -1026,6 +1026,7 @@
   "termWinners": [
     {
       "term": "Spring '26",
+      "finalized": false,
       "winners": [
         {
           "place": 1,

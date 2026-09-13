@@ -761,6 +761,26 @@ h2 {
     margin-top: 20px;
 }
 
+.empty-podium {
+    max-width: 680px;
+    padding: 22px;
+    background: #fffaf0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.empty-podium strong {
+    display: block;
+    color: var(--ink);
+    font-size: 1.25rem;
+}
+
+.empty-podium p {
+    margin: 8px 0 0;
+    color: var(--muted);
+    line-height: 1.55;
+}
+
 .term-podium h2 {
     margin-bottom: 12px;
     color: var(--purple);
