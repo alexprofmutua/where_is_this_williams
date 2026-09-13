@@ -17,192 +17,224 @@
       "title": "Photo 1",
       "image": "assests/photos/competition/competition-01.jpg",
       "postedAt": "2026-09-13T18:30:00",
-      "answer": "Dodd House",
-      "options": [
-        "Zilkha Center",
-        "Dodd House",
-        "Option 3 coming by 2 PM",
-        "Option 4 coming by 2 PM"
-      ],
       "bonusPoints": 0,
       "deadlineAt": "2026-09-13T21:30:00",
-      "revealAt": "2026-09-14T12:00:00"
+      "revealAt": "2026-09-14T12:00:00",
+      "answer": "Dodd House",
+      "options": [
+        "Dodd House",
+        "Zilkha Center",
+        "Paresky",
+        "Sawyer"
+      ]
     },
     {
       "id": "competition-02",
       "title": "Photo 2",
-      "image": "assests/photos/competition/competition-03.png",
+      "image": "assests/photos/competition/competition-02.jpg",
       "postedAt": "2026-09-13T18:30:00",
-      "answer": "Thompson House",
-      "options": [
-        "Thompson House",
-        "Sports Center",
-        "Option 3 coming by 2 PM",
-        "Option 4 coming by 2 PM"
-      ],
       "bonusPoints": 0,
       "deadlineAt": "2026-09-13T21:30:00",
-      "revealAt": "2026-09-14T12:00:00"
+      "revealAt": "2026-09-14T12:00:00",
+      "answer": "Weston Hall",
+      "options": [
+        "Weston Hall",
+        "Perry House",
+        "Tyler House",
+        "Hopkins Hall"
+      ]
     },
     {
       "id": "competition-03",
       "title": "Photo 3",
-      "image": "assests/photos/competition/competition-04.png",
+      "image": "assests/photos/competition/competition-03.png",
       "postedAt": "2026-09-13T18:30:00",
-      "answer": "Thompson House",
-      "options": [
-        "Thompson House",
-        "Dodd House",
-        "Mission Park",
-        "Option 4 coming by 2 PM"
-      ],
       "bonusPoints": 0,
       "deadlineAt": "2026-09-13T21:30:00",
-      "revealAt": "2026-09-14T12:00:00"
+      "revealAt": "2026-09-14T12:00:00",
+      "answer": "Poker Flats",
+      "options": [
+        "Cole Field House",
+        "Joker Flats",
+        "Poker Flats",
+        "Thompson Halls"
+      ]
     },
     {
       "id": "competition-04",
       "title": "Photo 4",
-      "image": "assests/photos/competition/competition-05.png",
+      "image": "assests/photos/competition/competition-04.png",
       "postedAt": "2026-09-13T18:30:00",
-      "answer": "Mission Park",
-      "options": [
-        "Mission Park",
-        "Sports Center",
-        "Sawyer Library",
-        "Option 4 coming by 2 PM"
-      ],
       "bonusPoints": 0,
       "deadlineAt": "2026-09-13T21:30:00",
-      "revealAt": "2026-09-14T12:00:00"
+      "revealAt": "2026-09-14T12:00:00",
+      "answer": "Thompson Hall",
+      "options": [
+        "Greylock Hall",
+        "Mark Hopkins",
+        "Bryant",
+        "Thompson Hall"
+      ]
     },
     {
       "id": "competition-05",
       "title": "Photo 5",
-      "image": "assests/photos/competition/competition-06.png",
+      "image": "assests/photos/competition/competition-05.png",
       "postedAt": "2026-09-13T18:30:00",
-      "answer": "Hollander Hall",
-      "options": [
-        "Hollander Hall",
-        "Sawyer Library",
-        "Hopkins Hall",
-        "Option 4 coming by 2 PM"
-      ],
       "bonusPoints": 0,
       "deadlineAt": "2026-09-13T21:30:00",
-      "revealAt": "2026-09-14T12:00:00"
+      "revealAt": "2026-09-14T12:00:00",
+      "answer": "Mission",
+      "options": [
+        "Mission",
+        "Schow",
+        "Paresky",
+        "Goodrich"
+      ]
     },
     {
       "id": "competition-06",
       "title": "Photo 6",
-      "image": "assests/photos/competition/competition-07.png",
+      "image": "assests/photos/competition/competition-06.png",
       "postedAt": "2026-09-13T18:30:00",
-      "answer": "Sawyer Library",
-      "options": [
-        "Sawyer Library",
-        "Hollander Hall",
-        "62 Center for Theatre and Dance",
-        "Option 4 coming by 2 PM"
-      ],
       "bonusPoints": 0,
       "deadlineAt": "2026-09-13T21:30:00",
-      "revealAt": "2026-09-14T12:00:00"
+      "revealAt": "2026-09-14T12:00:00",
+      "answer": "Hollander Hall",
+      "options": [
+        "Schapiro",
+        "Sawyer",
+        "Hollander Hall",
+        "Paresky"
+      ]
     },
     {
       "id": "competition-07",
       "title": "Photo 7",
-      "image": "assests/photos/competition/competition-08.png",
+      "image": "assests/photos/competition/competition-07.png",
       "postedAt": "2026-09-13T18:30:00",
-      "answer": "Mellon Room",
-      "options": [
-        "Mellon Room",
-        "Hopkins Hall",
-        "Dodd House",
-        "Option 4 coming by 2 PM"
-      ],
       "bonusPoints": 0,
       "deadlineAt": "2026-09-13T21:30:00",
-      "revealAt": "2026-09-14T12:00:00"
+      "revealAt": "2026-09-14T12:00:00",
+      "answer": "Sawyer",
+      "options": [
+        "Sawyer",
+        "Williams College Museum of Art",
+        "62 Center for Theater and Dance",
+        "Zilkha Center"
+      ]
     },
     {
       "id": "competition-08",
-      "title": "Photo 8",
+      "title": "Photo 9",
       "image": "assests/photos/competition/competition-09.png",
       "postedAt": "2026-09-13T18:30:00",
-      "answer": "Hopkins Hall",
-      "options": [
-        "Hopkins Hall",
-        "Sawyer Library",
-        "Mission Park",
-        "Option 4 coming by 2 PM"
-      ],
       "bonusPoints": 0,
       "deadlineAt": "2026-09-13T21:30:00",
-      "revealAt": "2026-09-14T12:00:00"
+      "revealAt": "2026-09-14T12:00:00",
+      "answer": "Hopkins Hall",
+      "options": [
+        "Wachenheim Center",
+        "Griffins Hall",
+        "Jesup Hall",
+        "Hopkins Hall"
+      ]
     },
     {
       "id": "competition-09",
-      "title": "Photo 9",
+      "title": "Photo 10",
       "image": "assests/photos/competition/competition-10.png",
       "postedAt": "2026-09-13T18:30:00",
+      "bonusPoints": 0,
+      "deadlineAt": "2026-09-13T21:30:00",
+      "revealAt": "2026-09-14T12:00:00",
       "answer": "Thompson Memorial Chapel",
       "options": [
         "Thompson Memorial Chapel",
-        "Hopkins Hall",
-        "Dodd House",
-        "Option 4 coming by 2 PM"
-      ],
-      "bonusPoints": 0,
-      "deadlineAt": "2026-09-13T21:30:00",
-      "revealAt": "2026-09-14T12:00:00"
+        "Goodrich Hall",
+        "Chandler",
+        "St. Anthony Hall (CDE building)"
+      ]
     },
     {
       "id": "competition-10",
-      "title": "Photo 10",
+      "title": "Photo 11",
       "image": "assests/photos/competition/competition-11.png",
       "postedAt": "2026-09-13T18:30:00",
-      "answer": "62 Center for Theatre and Dance",
-      "options": [
-        "62 Center for Theatre and Dance",
-        "Sawyer Library",
-        "Hollander Hall",
-        "Option 4 coming by 2 PM"
-      ],
       "bonusPoints": 0,
       "deadlineAt": "2026-09-13T21:30:00",
-      "revealAt": "2026-09-14T12:00:00"
+      "revealAt": "2026-09-14T12:00:00",
+      "answer": "62 Center for Theatre and Dance",
+      "options": [
+        "Paresky Center",
+        "Sawyer Library",
+        "Wachenheim Science Center",
+        "62 Center for Theatre and Dance"
+      ]
     },
     {
       "id": "competition-11",
-      "title": "Photo 11",
+      "title": "Photo 12",
       "image": "assests/photos/competition/competition-12.png",
       "postedAt": "2026-09-13T18:30:00",
-      "answer": "To Be Confirmed",
-      "options": [
-        "To Be Confirmed",
-        "Sawyer Library",
-        "Hopkins Hall",
-        "Option 4 coming by 2 PM"
-      ],
       "bonusPoints": 0,
       "deadlineAt": "2026-09-13T21:30:00",
-      "revealAt": "2026-09-14T12:00:00"
+      "revealAt": "2026-09-14T12:00:00",
+      "answer": "Davis Center",
+      "options": [
+        "Rice House",
+        "Bascom House",
+        "Chandler House",
+        "Davis Center"
+      ]
+    },
+    {
+      "id": "competition-12",
+      "title": "Photo 13",
+      "image": "assests/photos/competition/competition-13.png",
+      "postedAt": "2026-09-13T18:30:00",
+      "bonusPoints": 0,
+      "deadlineAt": "2026-09-13T21:30:00",
+      "revealAt": "2026-09-14T12:00:00",
+      "answer": "Horn House",
+      "options": [
+        "Garfield House",
+        "Horn House",
+        "Fellows Hall",
+        "Alumni House Hall"
+      ]
+    },
+    {
+      "id": "competition-13",
+      "title": "Photo 14",
+      "image": "assests/photos/competition/competition-14.png",
+      "postedAt": "2026-09-13T18:30:00",
+      "bonusPoints": 0,
+      "deadlineAt": "2026-09-13T21:30:00",
+      "revealAt": "2026-09-14T12:00:00",
+      "answer": "Milham House",
+      "options": [
+        "Horn House",
+        "Milham House",
+        "Alumni House Hall",
+        "ABC House"
+      ]
     },
     {
       "id": "competition-end",
-      "title": "Final Photo",
+      "title": "Final Question",
       "kind": "feedback",
       "image": "assests/photos/competition/competition-02.png",
       "postedAt": "2026-09-13T18:30:00",
+      "bonusPoints": 0,
+      "deadlineAt": "2026-09-13T21:30:00",
+      "revealAt": "2026-09-14T12:00:00",
       "answer": "Yes",
       "options": [
         "Yes",
         "No"
       ],
-      "commentPrompt": "Add a comment, suggestion, or anything else.",
-      "bonusPoints": 0,
-      "deadlineAt": "2026-09-13T21:30:00",
-      "revealAt": "2026-09-14T12:00:00"
+      "commentPrompt": "Add a comment, suggestion, or anything else."
     }
   ],
   "importedLeaders": [
