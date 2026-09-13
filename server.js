@@ -170,6 +170,16 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (req.method === "GET" && url.pathname === "/api/admin/export-db") {
+    requireAdmin(req);
+    res.writeHead(200, {
+      "Content-Type": "application/json; charset=utf-8",
+      "Content-Disposition": `attachment; filename="where-is-this-williams-live-${new Date().toISOString().slice(0, 10)}.json"`,
+    });
+    res.end(`${JSON.stringify(db, null, 2)}\n`);
+    return;
+  }
+
   if (req.method === "GET" && url.pathname === "/api/admin/stats") {
     requireAdmin(req);
     sendJson(res, 200, { stats: await buildAdminStats(db) });

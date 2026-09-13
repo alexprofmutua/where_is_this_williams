@@ -3,6 +3,7 @@ const form = document.querySelector("#admin-question-form");
 const statusText = document.querySelector("#admin-status");
 const adminTokenInput = document.querySelector("#admin-token");
 const loadDashboardButton = document.querySelector("#load-admin-dashboard-button");
+const downloadLiveJsonButton = document.querySelector("#download-live-json-button");
 const dashboardStatus = document.querySelector("#admin-dashboard-status");
 const refreshLeaderboardButton = document.querySelector("#refresh-admin-leaderboard-button");
 const leaderboardStatus = document.querySelector("#admin-leaderboard-status");
@@ -33,6 +34,7 @@ initAdminAccess();
 
 form.addEventListener("submit", saveQuestion);
 loadDashboardButton?.addEventListener("click", loadDashboard);
+downloadLiveJsonButton?.addEventListener("click", downloadLiveJson);
 adminTokenInput?.addEventListener("input", () => {
   const token = getAdminToken();
   if (token) localStorage.setItem(ADMIN_TOKEN_KEY, token);
@@ -78,6 +80,32 @@ async function saveQuestion(event) {
     form.reset();
   } catch (error) {
     statusText.textContent = error.message;
+  }
+}
+
+async function downloadLiveJson() {
+  try {
+    if (!getAdminToken()) throw new Error("Enter your admin token first.");
+    dashboardStatus.textContent = "Preparing live JSON download...";
+    const response = await fetch("/api/admin/export-db", {
+      headers: { "x-admin-token": getAdminToken() },
+    });
+    if (!response.ok) {
+      const payload = await response.json();
+      throw new Error(payload.error || "Download failed.");
+    }
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `where-is-this-williams-live-${new Date().toISOString().slice(0, 19).replaceAll(":", "-")}.json`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    dashboardStatus.textContent = "Live JSON downloaded.";
+  } catch (error) {
+    dashboardStatus.textContent = error.message;
   }
 }
 
