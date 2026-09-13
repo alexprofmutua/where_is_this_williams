@@ -257,6 +257,36 @@ body {
     text-transform: none;
 }
 
+.admin-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.admin-stat-card {
+    display: grid;
+    gap: 4px;
+    padding: 16px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.admin-stat-card strong {
+    color: var(--purple);
+    font-size: clamp(1.7rem, 4vw, 2.5rem);
+}
+
+.admin-stat-card span {
+    color: var(--muted);
+    font-weight: 900;
+}
+
+.admin-stats-table {
+    min-width: 420px;
+}
+
 .player-card label,
 .verify-card label {
     display: grid;
@@ -1150,6 +1180,10 @@ h2 {
     }
 
     .player-card {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-stats-grid {
         grid-template-columns: 1fr;
     }
 

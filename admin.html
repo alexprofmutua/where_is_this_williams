@@ -47,6 +47,32 @@
                 <p class="player-status" id="admin-status"></p>
             </form>
         </section>
+
+        <section class="dashboard-panel page-panel">
+            <div>
+                <p class="eyebrow">Admin Stats</p>
+                <h1>Site activity</h1>
+                <p class="page-copy">
+                    Use the same admin token above, then refresh stats to see visits, players, votes, and referrals.
+                </p>
+            </div>
+            <button class="secondary-button" id="refresh-stats-button" type="button">Refresh Stats</button>
+            <p class="player-status" id="stats-status"></p>
+            <div class="admin-stats-grid" id="admin-stats-grid"></div>
+            <div class="table-wrap">
+                <table class="history-table admin-stats-table">
+                    <thead>
+                        <tr>
+                            <th>Page</th>
+                            <th>Visits</th>
+                        </tr>
+                    </thead>
+                    <tbody id="page-stats-body">
+                        <tr><td colspan="2">Refresh stats to load page visits.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
     </main>
     <script src="app.js"></script>
     <script src="admin.js"></script>

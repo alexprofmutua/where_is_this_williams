@@ -1,5 +1,9 @@
 const form = document.querySelector("#admin-question-form");
 const statusText = document.querySelector("#admin-status");
+const refreshStatsButton = document.querySelector("#refresh-stats-button");
+const statsStatus = document.querySelector("#stats-status");
+const adminStatsGrid = document.querySelector("#admin-stats-grid");
+const pageStatsBody = document.querySelector("#page-stats-body");
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -33,3 +37,57 @@ form.addEventListener("submit", async (event) => {
     statusText.textContent = error.message;
   }
 });
+
+refreshStatsButton?.addEventListener("click", loadAdminStats);
+
+async function loadAdminStats() {
+  const token = document.querySelector("#admin-token").value;
+  if (!token) {
+    statsStatus.textContent = "Enter your admin token first.";
+    return;
+  }
+
+  try {
+    statsStatus.textContent = "Loading stats...";
+    const response = await fetch("/api/admin/stats", {
+      headers: { "x-admin-token": token },
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Could not load stats.");
+    renderAdminStats(result.stats);
+    statsStatus.textContent = `Updated ${new Date(result.stats.updatedAt).toLocaleTimeString()}.`;
+  } catch (error) {
+    statsStatus.textContent = error.message;
+  }
+}
+
+function renderAdminStats(stats) {
+  const cards = [
+    ["Total visits", stats.totalVisits],
+    ["Unique visitors", stats.uniqueVisitors],
+    ["Players", stats.players],
+    ["Votes", stats.votes],
+    ["Unique voters", stats.uniqueVoters],
+    ["Referrals", stats.referrals],
+  ];
+
+  adminStatsGrid.innerHTML = cards.map(([label, value]) => `
+    <article class="admin-stat-card">
+      <strong>${value}</strong>
+      <span>${label}</span>
+    </article>
+  `).join("");
+
+  pageStatsBody.innerHTML = stats.pageVisits.length
+    ? stats.pageVisits.map((item) => `<tr><td>${escapeHtml(item.page)}</td><td>${item.visits}</td></tr>`).join("")
+    : `<tr><td colspan="2">No page visits recorded yet.</td></tr>`;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll("\"", "&quot;")
+    .replaceAll("'", "&#039;");
+}

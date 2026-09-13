@@ -1,11 +1,13 @@
 import { createServer } from "node:http";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
+import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dbPath = path.join(__dirname, "data", "db.json");
+const analyticsPath = path.join(__dirname, "data", "analytics.json");
 const rankingCsvPath = path.join(__dirname, "assests", "spring26-ranking.csv");
 const port = Number(process.env.PORT || 3000);
 const adminToken = process.env.ADMIN_TOKEN || "change-me";
@@ -34,7 +36,7 @@ createServer(async (req, res) => {
       return;
     }
 
-    await serveStatic(res, url.pathname);
+    await serveStatic(req, res, url.pathname);
   } catch (error) {
     sendJson(res, error.status || 500, { error: error.message || "Server error" });
   }
@@ -72,6 +74,15 @@ async function readDb() {
 
 async function writeDb(db) {
   await writeFile(dbPath, `${JSON.stringify(db, null, 2)}\n`);
+}
+
+async function readAnalytics() {
+  if (!existsSync(analyticsPath)) return emptyAnalytics();
+  return ensureAnalytics(JSON.parse(await readFile(analyticsPath, "utf8")));
+}
+
+async function writeAnalytics(analytics) {
+  await writeFile(analyticsPath, `${JSON.stringify(ensureAnalytics(analytics), null, 2)}\n`);
 }
 
 async function handleApi(req, res, url) {
@@ -158,6 +169,12 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (req.method === "GET" && url.pathname === "/api/admin/stats") {
+    requireAdmin(req);
+    sendJson(res, 200, { stats: await buildAdminStats(db) });
+    return;
+  }
+
   if (req.method === "POST" && url.pathname === "/api/admin/questions") {
     requireAdmin(req);
     const question = normalizeQuestion(await readJson(req));
@@ -172,7 +189,7 @@ async function handleApi(req, res, url) {
   sendJson(res, 404, { error: "Not found" });
 }
 
-async function serveStatic(res, pathname) {
+async function serveStatic(req, res, pathname) {
   const requested = pathname === "/" ? "/index.html" : pathname;
   const filePath = path.normalize(path.join(__dirname, requested));
 
@@ -183,11 +200,41 @@ async function serveStatic(res, pathname) {
 
   try {
     const data = await readFile(filePath);
-    res.writeHead(200, { "Content-Type": mimeTypes[path.extname(filePath)] || "application/octet-stream" });
+    const headers = { "Content-Type": mimeTypes[path.extname(filePath)] || "application/octet-stream" };
+    if (path.extname(filePath) === ".html") {
+      const visit = await trackVisit(req, requested);
+      if (visit.cookie) headers["Set-Cookie"] = visit.cookie;
+    }
+    res.writeHead(200, headers);
     res.end(data);
   } catch {
     sendText(res, 404, "Not found");
   }
+}
+
+async function trackVisit(req, page) {
+  const normalizedPage = page === "/" ? "/index.html" : page;
+  const analytics = await readAnalytics();
+  const now = new Date().toISOString();
+  let visitorId = getCookie(req, "witw_visitor");
+  let cookie = null;
+
+  if (!visitorId) {
+    visitorId = randomUUID();
+    cookie = `witw_visitor=${visitorId}; Path=/; Max-Age=31536000; SameSite=Lax`;
+  }
+
+  analytics.totalVisits += 1;
+  analytics.pages[normalizedPage] = (analytics.pages[normalizedPage] || 0) + 1;
+  analytics.visitors[visitorId] = {
+    firstSeenAt: analytics.visitors[visitorId]?.firstSeenAt || now,
+    lastSeenAt: now,
+    visits: (analytics.visitors[visitorId]?.visits || 0) + 1,
+  };
+  analytics.recentVisits.unshift({ page: normalizedPage, visitorId, at: now });
+  analytics.recentVisits = analytics.recentVisits.slice(0, 100);
+  await writeAnalytics(analytics);
+  return { cookie };
 }
 
 function createVote(db, body) {
@@ -318,6 +365,45 @@ function buildCheers(db, unix) {
     achievement("happy-anniversary", "Happy Anniversary!", "🎈", "Celebrate a Where Is This Williams milestone.", false),
     { ...achievement("successful-referral", "Successful Referral!", "🎟️", "Invite new members with your referral link.", referralCount > 0), count: referralCount },
   ];
+}
+
+async function buildAdminStats(db) {
+  const analytics = await readAnalytics();
+  const players = Object.values(db.players || {});
+  const votes = db.votes || [];
+  const referrals = players.filter((player) => player.referredBy).length;
+  const pageVisits = Object.entries(analytics.pages || {})
+    .map(([page, visits]) => ({ page, visits }))
+    .sort((a, b) => b.visits - a.visits);
+
+  return {
+    totalVisits: analytics.totalVisits || 0,
+    uniqueVisitors: Object.keys(analytics.visitors || {}).length,
+    players: players.length,
+    votes: votes.length,
+    uniqueVoters: new Set(votes.map((vote) => vote.unix)).size,
+    referrals,
+    pageVisits,
+    recentVisits: analytics.recentVisits || [],
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function ensureAnalytics(db) {
+  db.totalVisits = Number(db.totalVisits || 0);
+  if (!db.pages) db.pages = {};
+  if (!db.visitors) db.visitors = {};
+  if (!Array.isArray(db.recentVisits)) db.recentVisits = [];
+  return db;
+}
+
+function emptyAnalytics() {
+  return {
+    totalVisits: 0,
+    pages: {},
+    visitors: {},
+    recentVisits: [],
+  };
 }
 
 function normalizePlayer(body) {
@@ -487,6 +573,12 @@ async function readJson(req) {
 
 function requireAdmin(req) {
   if (req.headers["x-admin-token"] !== adminToken) throw httpError(401, "Admin token required.");
+}
+
+function getCookie(req, name) {
+  const cookies = String(req.headers.cookie || "").split(";").map((cookie) => cookie.trim());
+  const match = cookies.find((cookie) => cookie.startsWith(`${name}=`));
+  return match ? decodeURIComponent(match.slice(name.length + 1)) : "";
 }
 
 function httpError(status, message) {
