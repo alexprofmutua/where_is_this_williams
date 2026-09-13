@@ -33,7 +33,6 @@ const profileAvatar = document.querySelector("#profile-avatar");
 const profileName = document.querySelector("#profile-name");
 const profileMeta = document.querySelector("#profile-meta");
 const avatarUpload = document.querySelector("#avatar-upload");
-const switchPlayerButton = document.querySelector("#switch-player-button");
 const reminderButton = document.querySelector("#reminder-button");
 const reminderStatus = document.querySelector("#reminder-status");
 const questionCount = document.querySelector("#question-count");
@@ -76,7 +75,6 @@ function bindEvents() {
   document.querySelectorAll("[data-auth-mode]").forEach((button) => {
     button.addEventListener("click", () => setAuthMode(button.dataset.authMode));
   });
-  switchPlayerButton?.addEventListener("click", showLoginForm);
   document.querySelectorAll("[data-avatar]").forEach((button) => {
     button.addEventListener("click", () => saveAvatar(button.dataset.avatar));
   });
@@ -179,16 +177,6 @@ function setAuthMode(mode) {
   if (playerFormHelp) playerFormHelp.textContent = "First time playing? Use your Williams email and Instagram username to make your profile.";
   if (savePlayerButton) savePlayerButton.textContent = "Sign Up";
   if (playerStatus) playerStatus.textContent = "You can only play once, and I hope you have fun.";
-}
-
-function showLoginForm() {
-  localStorage.removeItem(ACTIVE_UNIX_KEY);
-  activePlayer = null;
-  playerForm?.classList.remove("hidden");
-  profileCard?.classList.add("hidden");
-  setAuthMode("login");
-  if (startButton) startButton.disabled = true;
-  emailInput?.focus();
 }
 
 function setPlayerFormBusy(isBusy) {

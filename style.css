@@ -392,11 +392,6 @@ body {
     gap: 10px;
 }
 
-.profile-switch {
-    grid-column: 1 / -1;
-    width: fit-content;
-}
-
 .avatar-options {
     display: flex;
     flex-wrap: wrap;
