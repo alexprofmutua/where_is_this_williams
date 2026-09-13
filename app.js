@@ -406,8 +406,8 @@ async function nextQuestion() {
 
 async function showResults() {
   showScreen(resultsScreen);
-  finalScore.textContent = `${await getActiveScore()} points`;
-  resultMessage.textContent = `Your selections were saved. Correct answers and points appear after ${formatDate(appData.settings.revealAt)}.`;
+  finalScore.textContent = "Results ready at 9:30 PM";
+  resultMessage.textContent = "Your selections were saved. Correct answers, points, and leaderboard updates will be ready at 9:30 PM.";
   await renderAchievements(resultsAchievements, { unlockedOnly: true, congratulatory: true });
 }
 
