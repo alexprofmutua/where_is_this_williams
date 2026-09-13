@@ -363,6 +363,7 @@ function buildAchievements(db, unix) {
     achievement("perfect-round", "Perfect Round", "💎", "Got every revealed location right.", revealedVotes.length > 0 && correctVotes.length === revealedVotes.length),
     achievement("comeback", "Comeback", "🔁", "Got one right after a nice try.", firstCorrectIndex > 0),
     achievement("feedback-friend", "Feedback Friend", "💬", "Left final feedback.", feedbackVotes.some((vote) => vote.feedbackText)),
+    achievement("better-place", "Making the App a Better Place", "🛠️", "Added a suggestion for the app.", feedbackVotes.some((vote) => String(vote.feedbackText || "").trim().length > 0)),
     achievement("top-twelve", "Top 12 Glow", "⭐", "Reached the public Top 12 board.", Boolean(leaderboardEntry) && finalScore > 0),
     achievement("top-mapper", "Top Mapper", "🧭", "Held the #1 rank.", leaderboardEntry?.place === 1 && finalScore > 0),
   ];

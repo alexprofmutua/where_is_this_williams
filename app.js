@@ -413,7 +413,7 @@ async function renderHistory() {
 async function renderAchievements(target, options = {}) {
   if (!target) return;
   if (!activePlayer) {
-    if (achievementCount) achievementCount.textContent = "Achievements (0/11)";
+    if (achievementCount) achievementCount.textContent = "Achievements";
     if (cheersCount) cheersCount.textContent = "Cheers (0/2)";
     target.innerHTML = `<p class="achievement-empty">Sign up or log in on the home page to start unlocking stickers.</p>`;
     return;
