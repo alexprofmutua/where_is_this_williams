@@ -286,7 +286,36 @@ body {
 .player-form-copy {
     grid-column: 1 / -1;
     display: grid;
-    gap: 6px;
+    gap: 10px;
+}
+
+.auth-tabs {
+    width: fit-content;
+    display: inline-grid;
+    grid-template-columns: repeat(2, minmax(88px, 1fr));
+    gap: 4px;
+    padding: 4px;
+    background: #eee7d9;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.auth-tab {
+    min-height: 38px;
+    padding: 0 14px;
+    color: var(--muted);
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    font: inherit;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.auth-tab.active {
+    color: white;
+    background: var(--purple);
+    box-shadow: 0 4px 10px rgba(75, 36, 128, 0.22);
 }
 
 .player-form-copy h2 {

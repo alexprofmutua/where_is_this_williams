@@ -9,6 +9,7 @@ let timerId = null;
 let eventWindowTimerId = null;
 let music = null;
 let questionEndsAt = null;
+let authMode = "signup";
 
 const introScreen = document.querySelector("#intro-screen");
 const quizScreen = document.querySelector("#quiz-screen");
@@ -20,6 +21,7 @@ const aboutLink = document.querySelector('a[href="#about"]');
 const aboutPanel = document.querySelector("#about");
 const playerForm = document.querySelector("#player-form");
 const playerFormTitle = document.querySelector("#player-form-title");
+const playerFormHelp = document.querySelector("#player-form-help");
 const emailInput = document.querySelector("#email-input");
 const instagramInput = document.querySelector("#instagram-input");
 const savePlayerButton = document.querySelector("#save-player-button");
@@ -69,6 +71,9 @@ async function init() {
 
 function bindEvents() {
   playerForm?.addEventListener("submit", savePlayer);
+  document.querySelectorAll("[data-auth-mode]").forEach((button) => {
+    button.addEventListener("click", () => setAuthMode(button.dataset.authMode));
+  });
   switchPlayerButton?.addEventListener("click", showLoginForm);
   document.querySelectorAll("[data-avatar]").forEach((button) => {
     button.addEventListener("click", () => saveAvatar(button.dataset.avatar));
@@ -136,8 +141,7 @@ function syncPlayerView(mode = "saved") {
   if (!activePlayer) {
     playerForm.classList.remove("hidden");
     profileCard.classList.add("hidden");
-    if (playerFormTitle) playerFormTitle.textContent = "Create profile or log in";
-    if (savePlayerButton) savePlayerButton.textContent = "Create / Log In";
+    setAuthMode(authMode);
     startButton.disabled = true;
     playerStatus.textContent = "You can only play once, and I hope you have fun.";
     return;
@@ -153,14 +157,34 @@ function syncPlayerView(mode = "saved") {
   syncEventWindow();
 }
 
+function setAuthMode(mode) {
+  authMode = mode === "login" ? "login" : "signup";
+  document.querySelectorAll("[data-auth-mode]").forEach((button) => {
+    const isActive = button.dataset.authMode === authMode;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
+  });
+
+  if (authMode === "login") {
+    if (playerFormTitle) playerFormTitle.textContent = "Log in to your player profile";
+    if (playerFormHelp) playerFormHelp.textContent = "Returning player? Enter the same Williams email and exact Instagram username you used before.";
+    if (savePlayerButton) savePlayerButton.textContent = "Log In";
+    if (playerStatus) playerStatus.textContent = "Your saved answers, score, history, and stickers will load after login.";
+    return;
+  }
+
+  if (playerFormTitle) playerFormTitle.textContent = "Create your player profile";
+  if (playerFormHelp) playerFormHelp.textContent = "First time playing? Use your Williams email and Instagram username to make your profile.";
+  if (savePlayerButton) savePlayerButton.textContent = "Sign Up";
+  if (playerStatus) playerStatus.textContent = "You can only play once, and I hope you have fun.";
+}
+
 function showLoginForm() {
   localStorage.removeItem(ACTIVE_UNIX_KEY);
   activePlayer = null;
   playerForm?.classList.remove("hidden");
   profileCard?.classList.add("hidden");
-  if (playerFormTitle) playerFormTitle.textContent = "Log in or create another profile";
-  if (savePlayerButton) savePlayerButton.textContent = "Continue";
-  if (playerStatus) playerStatus.textContent = "Enter the same Williams email and Instagram username to return to an existing profile.";
+  setAuthMode("login");
   if (startButton) startButton.disabled = true;
   emailInput?.focus();
 }
@@ -168,7 +192,7 @@ function showLoginForm() {
 function setPlayerFormBusy(isBusy) {
   if (!savePlayerButton) return;
   savePlayerButton.disabled = isBusy;
-  savePlayerButton.textContent = isBusy ? "Checking..." : "Create / Log In";
+  savePlayerButton.textContent = isBusy ? "Checking..." : authMode === "login" ? "Log In" : "Sign Up";
 }
 
 function renderProfile() {

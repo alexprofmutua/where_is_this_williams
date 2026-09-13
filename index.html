@@ -37,8 +37,12 @@
                 </p>
                 <form class="player-card" id="player-form">
                     <div class="player-form-copy">
-                        <h2 id="player-form-title">Create profile or log in</h2>
-                        <p>Use your Williams email and Instagram username. Returning players should enter the same details they used the first time.</p>
+                        <div class="auth-tabs" role="tablist" aria-label="Player access">
+                            <button class="auth-tab active" id="signup-tab" type="button" data-auth-mode="signup" role="tab" aria-selected="true">Sign Up</button>
+                            <button class="auth-tab" id="login-tab" type="button" data-auth-mode="login" role="tab" aria-selected="false">Log In</button>
+                        </div>
+                        <h2 id="player-form-title">Create your player profile</h2>
+                        <p id="player-form-help">First time playing? Use your Williams email and Instagram username to make your profile.</p>
                     </div>
                     <label>
                         Williams email
@@ -48,7 +52,7 @@
                         Instagram username
                         <input id="instagram-input" name="instagram" type="text" autocomplete="username" placeholder="@ephs_everywhere" required />
                     </label>
-                    <button class="primary-button" id="save-player-button" type="submit">Create / Log In</button>
+                    <button class="primary-button" id="save-player-button" type="submit">Sign Up</button>
                 </form>
                 <p class="player-status" id="player-status">You can only play once, and I hope you have fun.</p>
                 <section class="profile-card hidden" id="profile-card" aria-label="Player profile">
