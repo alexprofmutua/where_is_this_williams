@@ -44,6 +44,7 @@ const photoPointsText = document.querySelector("#photo-points");
 const quizPhoto = document.querySelector("#quiz-photo");
 const photoCaption = document.querySelector("#photo-caption");
 const answers = document.querySelector("#answers");
+const nextQuestionButton = document.querySelector("#next-question-button");
 const finalScore = document.querySelector("#final-score");
 const resultMessage = document.querySelector("#results-message");
 const historyList = document.querySelector("#history-list");
@@ -98,6 +99,7 @@ function bindEvents() {
     window.addEventListener(eventName, startGameMusicOnce, { once: true, passive: true });
   });
   startButton?.addEventListener("click", startQuiz);
+  nextQuestionButton?.addEventListener("click", nextQuestion);
   restartButton?.addEventListener("click", () => {
     window.location.href = "leaderboard.html";
   });
@@ -303,6 +305,7 @@ async function showQuestion() {
   scoreText.textContent = await getActiveScore();
   if (photoPointsText) photoPointsText.textContent = `${getQuestionPoints(question)} points`;
   answers.replaceChildren();
+  hideNextQuestionButton();
   quizPhoto.src = question.image;
   photoCaption.textContent = getQuestionCaption(question, existingVote);
   clearInterval(timerId);
@@ -333,6 +336,8 @@ async function showQuestion() {
     answers.append(button);
   });
 
+  if (existingVote || question.closed || question.revealed) showNextQuestionButton();
+
   updateDeadlineClock(question);
   if (questionEndsAt) {
     timerId = setInterval(() => updateDeadlineClock(question), 250);
@@ -350,6 +355,9 @@ async function submitVote(question, choice, button) {
     });
     clearInterval(timerId);
     questionEndsAt = null;
+    [...answers.children].forEach((item) => {
+      if (item.classList?.contains("answer-button")) item.classList.remove("selected");
+    });
     button.classList.add("selected");
     [...answers.children].forEach((item) => {
       item.disabled = true;
@@ -357,10 +365,21 @@ async function submitVote(question, choice, button) {
     photoCaption.textContent = question.kind === "feedback"
       ? "Thanks. Your feedback was saved."
       : `Your answer was saved. The correct location and points unlock after ${formatDate(question.revealAt || question.deadlineAt)}.`;
-    setTimeout(nextQuestion, 900);
+    showNextQuestionButton();
   } catch (error) {
     photoCaption.textContent = error.message;
   }
+}
+
+function showNextQuestionButton() {
+  if (!nextQuestionButton) return;
+  const isLastQuestion = currentQuestionIndex >= appData.questions.length - 1;
+  nextQuestionButton.textContent = isLastQuestion ? "See Results" : "Next Photo";
+  nextQuestionButton.classList.remove("hidden");
+}
+
+function hideNextQuestionButton() {
+  nextQuestionButton?.classList.add("hidden");
 }
 
 async function nextQuestion() {
@@ -818,7 +837,7 @@ function updateDeadlineClock(question) {
       photoCaption.textContent = question.kind === "feedback"
         ? "Time is up. Thanks for playing."
         : "Time is up. Moving to the next photo.";
-      setTimeout(nextQuestion, 700);
+      showNextQuestionButton();
       return;
     }
     timerText.textContent = `${Math.ceil(remaining / 1000)}s`;
