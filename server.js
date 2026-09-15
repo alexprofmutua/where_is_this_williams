@@ -11,6 +11,8 @@ const analyticsPath = path.join(__dirname, "data", "analytics.json");
 const rankingCsvPath = path.join(__dirname, "assests", "spring26-ranking.csv");
 const port = Number(process.env.PORT || 3000);
 const adminToken = process.env.ADMIN_TOKEN || "change-me";
+const supabaseUrl = (process.env.SUPABASE_URL || "").replace(/\/$/, "");
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 const mimeTypes = {
   ".avif": "image/avif",
@@ -69,11 +71,14 @@ async function ensureDb() {
 }
 
 async function readDb() {
-  return JSON.parse(await readFile(dbPath, "utf8"));
+  const db = JSON.parse(await readFile(dbPath, "utf8"));
+  if (isSupabaseConfigured()) await hydrateDbFromSupabase(db);
+  return db;
 }
 
 async function writeDb(db) {
   await writeFile(dbPath, `${JSON.stringify(db, null, 2)}\n`);
+  if (isSupabaseConfigured()) await syncSupabase(db);
 }
 
 async function readAnalytics() {
@@ -83,6 +88,111 @@ async function readAnalytics() {
 
 async function writeAnalytics(analytics) {
   await writeFile(analyticsPath, `${JSON.stringify(ensureAnalytics(analytics), null, 2)}\n`);
+}
+
+function isSupabaseConfigured() {
+  return Boolean(supabaseUrl && supabaseServiceRoleKey);
+}
+
+async function hydrateDbFromSupabase(db) {
+  const [playerRows, voteRows] = await Promise.all([
+    supabaseFetch("/rest/v1/witw_players?select=*"),
+    supabaseFetch("/rest/v1/witw_votes?select=*"),
+  ]);
+
+  for (const row of playerRows) {
+    db.players[row.unix] = row.payload || supabaseRowToPlayer(row);
+  }
+
+  const votesById = new Map(db.votes.map((vote) => [vote.id, vote]));
+  for (const row of voteRows) {
+    const vote = row.payload || supabaseRowToVote(row);
+    votesById.set(vote.id, vote);
+  }
+  db.votes = [...votesById.values()];
+}
+
+async function syncSupabase(db) {
+  const players = Object.values(db.players).map(playerToSupabaseRow);
+  const votes = db.votes.map(voteToSupabaseRow);
+
+  await Promise.all([
+    players.length ? supabaseFetch("/rest/v1/witw_players", { method: "POST", body: players, prefer: "resolution=merge-duplicates" }) : null,
+    votes.length ? supabaseFetch("/rest/v1/witw_votes", { method: "POST", body: votes, prefer: "resolution=merge-duplicates" }) : null,
+  ]);
+}
+
+async function supabaseFetch(pathname, options = {}) {
+  const headers = {
+    apikey: supabaseServiceRoleKey,
+    Authorization: `Bearer ${supabaseServiceRoleKey}`,
+    "Content-Type": "application/json",
+  };
+  if (options.prefer) headers.Prefer = options.prefer;
+
+  const response = await fetch(`${supabaseUrl}${pathname}`, {
+    method: options.method || "GET",
+    headers,
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+  const text = await response.text();
+  if (!response.ok) throw new Error(`Supabase request failed: ${response.status} ${text}`);
+  return text ? JSON.parse(text) : null;
+}
+
+function playerToSupabaseRow(player) {
+  return {
+    unix: player.unix,
+    email: player.email,
+    instagram: player.instagram || player.screenName,
+    screen_name: player.screenName || player.instagram,
+    real_name: player.realName || "",
+    avatar: player.avatar || "",
+    avatar_image: player.avatarImage || null,
+    referred_by: player.referredBy || null,
+    verified: Boolean(player.verified),
+    payload: player,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+function voteToSupabaseRow(vote) {
+  return {
+    id: vote.id,
+    unix: vote.unix,
+    question_id: vote.questionId,
+    title: vote.title,
+    choice: vote.choice,
+    feedback_text: vote.feedbackText || null,
+    answered_at: vote.answeredAt,
+    payload: vote,
+  };
+}
+
+function supabaseRowToPlayer(row) {
+  return {
+    unix: row.unix,
+    email: row.email,
+    instagram: row.instagram,
+    screenName: row.screen_name || row.instagram,
+    realName: row.real_name || "",
+    avatar: row.avatar || "💜",
+    avatarImage: row.avatar_image || undefined,
+    referredBy: row.referred_by || undefined,
+    verified: Boolean(row.verified),
+  };
+}
+
+function supabaseRowToVote(row) {
+  return {
+    id: row.id,
+    unix: row.unix,
+    questionId: row.question_id,
+    title: row.title,
+    choice: row.choice,
+    feedbackText: row.feedback_text || undefined,
+    answeredAt: row.answered_at,
+  };
 }
 
 async function handleApi(req, res, url) {
@@ -137,6 +247,14 @@ async function handleApi(req, res, url) {
     db.votes.push(vote);
     await writeDb(db);
     sendJson(res, 201, { vote: publicVote(db, vote) });
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/post-submissions") {
+    const votes = createPostSubmissionVotes(db, await readJson(req));
+    db.votes.push(...votes);
+    await writeDb(db);
+    sendJson(res, 201, { votes: votes.map((vote) => publicVote(db, vote)) });
     return;
   }
 
@@ -311,6 +429,39 @@ function createVote(db, body) {
     feedbackText: question.kind === "feedback" ? feedbackText : undefined,
     answeredAt: new Date().toISOString(),
   };
+}
+
+function createPostSubmissionVotes(db, body) {
+  const unix = String(body.unix || "").trim().toLowerCase();
+  const selections = Array.isArray(body.selections) ? body.selections : [];
+
+  if (!db.players[unix]) throw httpError(400, "Sign up or log in first.");
+  if (!db.players[unix].verified) throw httpError(403, "Verify your Williams email before voting.");
+  if (!selections.length) throw httpError(400, "Choose at least one answer before submitting.");
+
+  return selections.map((selection) => {
+    const questionId = String(selection.postId || selection.questionId || "").trim();
+    const question = db.questions.find((item) => item.id === questionId);
+    const isFeedback = question?.kind === "feedback";
+    const choice = isFeedback ? "Feedback" : String(selection.choice || "").trim();
+    const feedbackText = String(selection.comment || selection.feedbackText || "").trim().slice(0, 800);
+
+    if (!question) throw httpError(404, "Question not found.");
+    if (!isFeedback && !question.options.includes(choice)) throw httpError(400, `Choose an option for ${question.title}.`);
+    if (db.votes.some((vote) => vote.unix === unix && vote.questionId === questionId)) {
+      throw httpError(409, "This player already submitted these posts.");
+    }
+
+    return {
+      id: `${questionId}-${unix}`,
+      unix,
+      questionId,
+      title: question.title,
+      choice,
+      feedbackText: isFeedback ? feedbackText : undefined,
+      answeredAt: new Date().toISOString(),
+    };
+  });
 }
 
 function publicQuestion(question) {

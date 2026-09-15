@@ -15,6 +15,7 @@ let eventWindowTimerId = null;
 let music = null;
 let questionEndsAt = null;
 let authMode = "signup";
+let authSubmitButton = null;
 
 const introScreen = document.querySelector("#intro-screen");
 const quizScreen = document.querySelector("#quiz-screen");
@@ -22,6 +23,7 @@ const resultsScreen = document.querySelector("#results-screen");
 const startButton = document.querySelector("#start-button");
 const restartButton = document.querySelector("#restart-button");
 const audioToggle = document.querySelector("#audio-toggle");
+const logoutButtons = document.querySelectorAll("[data-logout-button]");
 const aboutLink = document.querySelector('a[href="#about"]');
 const aboutPanel = document.querySelector("#about");
 const playerForm = document.querySelector("#player-form");
@@ -51,6 +53,9 @@ const resultMessage = document.querySelector("#results-message");
 const historyList = document.querySelector("#history-list");
 const historyTableBody = document.querySelector("#history-table-body");
 const leaderboardList = document.querySelector("#leaderboard-list");
+const postsGrid = document.querySelector("#posts-grid");
+const postsSubmitButton = document.querySelector("#posts-submit-button");
+const postsSubmitStatus = document.querySelector("#posts-submit-status");
 const championGallery = document.querySelector("#champion-gallery");
 const achievementList = document.querySelector("#achievement-list");
 const achievementCount = document.querySelector("#achievement-count");
@@ -80,13 +85,19 @@ async function init() {
   syncReminderState();
   scheduleVoteReminder();
   syncEventWindow();
-  attemptGameMusicAutoplay();
+  if (!isLoginPage()) attemptGameMusicAutoplay();
   eventWindowTimerId = window.setInterval(syncEventWindow, 1000);
   await renderPageData();
 }
 
 function bindEvents() {
   playerForm?.addEventListener("submit", savePlayer);
+  document.querySelectorAll("[data-submit-mode]").forEach((button) => {
+    button.addEventListener("click", () => {
+      authMode = button.dataset.submitMode === "login" ? "login" : "signup";
+      authSubmitButton = button;
+    });
+  });
   document.querySelectorAll("[data-auth-mode]").forEach((button) => {
     button.addEventListener("click", () => setAuthMode(button.dataset.authMode));
   });
@@ -96,9 +107,14 @@ function bindEvents() {
   avatarUpload?.addEventListener("change", saveUploadedAvatar);
   reminderButton?.addEventListener("click", enableVoteReminders);
   audioToggle?.addEventListener("click", toggleGameMusicMute);
-  ["pointerdown", "keydown", "touchstart"].forEach((eventName) => {
-    window.addEventListener(eventName, startGameMusicOnce, { once: true, passive: true });
-  });
+  logoutButtons.forEach((button) => button.addEventListener("click", logoutPlayer));
+  postsGrid?.addEventListener("click", selectPostOption);
+  postsSubmitButton?.addEventListener("click", submitPostSelections);
+  if (!isLoginPage()) {
+    ["pointerdown", "keydown", "touchstart"].forEach((eventName) => {
+      window.addEventListener(eventName, startGameMusicOnce, { once: true, passive: true });
+    });
+  }
   startButton?.addEventListener("click", startQuiz);
   nextQuestionButton?.addEventListener("click", nextQuestion);
   restartButton?.addEventListener("click", () => {
@@ -144,7 +160,7 @@ async function savePlayer(event) {
     const { player, created } = await apiPost("/api/players", payload);
     localStorage.setItem(ACTIVE_UNIX_KEY, player.unix);
     activePlayer = player;
-    if (isLoginPage() || isAdminProfile(player)) return redirectAfterLogin(player);
+    if (isLoginPage()) return redirectAfterLogin(player);
     syncPlayerView(created ? "created" : "login");
     await renderPageData();
   } catch (error) {
@@ -177,12 +193,14 @@ function redirectToLogin() {
 }
 
 function redirectAfterLogin(player) {
-  if (isAdminProfile(player)) {
-    window.location.href = "admin.html";
-    return;
-  }
-  const next = new URLSearchParams(window.location.search).get("next");
-  window.location.href = next || "index.html";
+  window.location.href = "achievements.html";
+}
+
+function logoutPlayer() {
+  localStorage.removeItem(ACTIVE_UNIX_KEY);
+  localStorage.removeItem("where-is-this-williams-admin-token");
+  activePlayer = null;
+  window.location.href = "login.html";
 }
 
 function syncPlayerView(mode = "saved") {
@@ -215,6 +233,11 @@ function setAuthMode(mode) {
     button.setAttribute("aria-selected", String(isActive));
   });
 
+  if (isLoginPage() && !document.querySelector("[data-auth-mode]")) {
+    if (playerStatus) playerStatus.textContent = "";
+    return;
+  }
+
   if (authMode === "login") {
     if (playerFormTitle) playerFormTitle.textContent = "Log in";
     if (playerFormHelp) playerFormHelp.textContent = "Returning player? Enter the same Williams email and exact Instagram username you used before.";
@@ -231,7 +254,14 @@ function setAuthMode(mode) {
 
 function setPlayerFormBusy(isBusy) {
   if (!savePlayerButton) return;
-  savePlayerButton.disabled = isBusy;
+  document.querySelectorAll("[data-submit-mode]").forEach((button) => {
+    button.disabled = isBusy;
+  });
+  if (isLoginPage()) {
+    const activeButton = authSubmitButton || savePlayerButton;
+    activeButton.textContent = isBusy ? "Checking..." : authMode === "login" ? "Log In" : "Sign Up";
+    return;
+  }
   savePlayerButton.textContent = isBusy ? "Checking..." : authMode === "login" ? "Log In" : "Sign Up";
 }
 
@@ -441,7 +471,7 @@ async function getActiveScore() {
 }
 
 async function renderPageData() {
-  await Promise.all([renderLeaderboard(), renderHistory(), renderPodium(), renderAchievements(achievementList)]);
+  await Promise.all([renderLeaderboard(), renderHistory(), renderPosts(), renderPodium(), renderAchievements(achievementList)]);
 }
 
 async function renderLeaderboard() {
@@ -476,9 +506,90 @@ async function renderHistory() {
 
   if (historyTableBody) {
     historyTableBody.innerHTML = votes.length
-      ? votes.map((vote) => `<tr><td>${escapeHtml(vote.title)}</td><td>${escapeHtml(vote.choice)}</td><td>${escapeHtml(vote.correctAnswer || "Hidden until reveal")}</td><td>${escapeHtml(historyResultLabel(vote))}</td><td>${vote.correct ? 10 : 0}</td><td>${vote.correct ? vote.bonusPoints : 0}</td><td>${vote.points}</td><td>${formatDate(vote.answeredAt)}</td></tr>`).join("")
-      : `<tr><td colspan="8">No voting history yet. Sign up or log in on the home page, then make your first guess.</td></tr>`;
+      ? votes.map((vote) => `<tr><td>${escapeHtml(vote.title)}</td><td>${escapeHtml(vote.choice)}</td><td>${escapeHtml(vote.correctAnswer || "Hidden until reveal")}</td><td>${vote.points}</td><td>${formatDate(vote.answeredAt)}</td></tr>`).join("")
+      : `<tr><td colspan="5">No voting history yet.</td></tr>`;
   }
+}
+
+async function renderPosts() {
+  if (!postsGrid) return;
+  const savedSubmission = localStorage.getItem("where-is-this-williams-post-submissions");
+  if (savedSubmission) {
+    showPostsSubmittedMessage();
+    return;
+  }
+  const questions = appData.questions;
+  postsGrid.innerHTML = questions.length
+    ? questions.map((question, index) => `
+        <article class="post-card" data-post-id="${escapeHtml(question.id)}">
+          <img src="${escapeHtml(question.image)}" alt="${escapeHtml(question.title)}" />
+          <div class="post-card-body">
+            <div class="post-card-topline">
+              <strong>${question.kind === "feedback" ? "Feedback" : `${getQuestionPoints(question)} pts`}</strong>
+            </div>
+            ${question.kind === "feedback" ? "" : `
+              <div class="post-options">
+                ${question.options.map((option) => `<button type="button" data-post-option>${escapeHtml(option)}</button>`).join("")}
+              </div>
+            `}
+            ${question.kind === "feedback" ? `
+              <label class="post-comment-label">
+                Suggestions
+                <textarea data-post-comment rows="4" placeholder="${escapeHtml(question.commentPrompt || "Add a comment, suggestion, or anything else.")}"></textarea>
+              </label>
+            ` : ""}
+          </div>
+        </article>
+      `).join("")
+    : `<p class="page-copy">No posts yet.</p>`;
+}
+
+function selectPostOption(event) {
+  const button = event.target.closest("[data-post-option]");
+  if (!button) return;
+  const options = button.closest(".post-options");
+  if (!options) return;
+  options.querySelectorAll("[data-post-option]").forEach((optionButton) => {
+    optionButton.classList.toggle("selected", optionButton === button);
+  });
+}
+
+async function submitPostSelections() {
+  if (!postsGrid || !postsSubmitStatus) return;
+  const cards = [...postsGrid.querySelectorAll(".post-card")];
+  const selections = cards.map((card) => {
+    const selected = card.querySelector("[data-post-option].selected");
+    return {
+      postId: card.dataset.postId,
+      choice: selected?.textContent.trim() || "",
+      comment: card.querySelector("[data-post-comment]")?.value || "",
+    };
+  });
+
+  try {
+    if (!activePlayer) throw new Error("Log in before submitting.");
+    if (postsSubmitButton) postsSubmitButton.disabled = true;
+    postsSubmitStatus.textContent = "Submitting...";
+    await apiPost("/api/post-submissions", {
+      unix: activePlayer.unix,
+      selections,
+    });
+    localStorage.setItem("where-is-this-williams-post-submissions", JSON.stringify({
+      selections,
+      savedAt: new Date().toISOString(),
+    }));
+    showPostsSubmittedMessage();
+  } catch (error) {
+    if (postsSubmitButton) postsSubmitButton.disabled = false;
+    postsSubmitStatus.textContent = error.message;
+  }
+}
+
+function showPostsSubmittedMessage() {
+  if (!postsGrid) return;
+  postsGrid.innerHTML = `<section class="posts-submitted-message"><strong>Submitted.</strong><span>Thank you for participating.</span></section>`;
+  if (postsSubmitButton) postsSubmitButton.classList.add("hidden");
+  postsSubmitStatus.textContent = "";
 }
 
 async function renderAchievements(target, options = {}) {
@@ -583,12 +694,7 @@ async function renderPodium() {
   if (!championGallery) return;
   const { terms } = await apiGet("/api/podium");
   if (!terms.length) {
-    championGallery.innerHTML = `
-      <section class="empty-podium">
-        <strong>Final winners have not been released yet.</strong>
-        <p>The Podium of Champions will show first, second, and third place only after the competition is finalized.</p>
-      </section>
-    `;
+    championGallery.innerHTML = "";
     return;
   }
 
@@ -683,7 +789,9 @@ function toggleGameMusicMute() {
 
 function syncAudioToggle() {
   if (!audioToggle || !music) return;
-  audioToggle.textContent = music.isMuted() ? "Unmute" : "Mute";
+  const isMuted = music.isMuted();
+  audioToggle.textContent = isMuted ? "🔇" : "🔊";
+  audioToggle.setAttribute("aria-label", isMuted ? "Unmute audio" : "Mute audio");
   audioToggle.setAttribute("aria-pressed", String(music.isMuted()));
 }
 

@@ -3,39 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Where is this Williams College</title>
+    <title>Posts | Where is this Williams College</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="about-page requires-player auth-pending">
+<body class="posts-page requires-player auth-pending">
     <header class="about-site">
-        <a href="#" class="site-logo" aria-label="Where is this Williams home">
+        <a href="index.html" class="site-logo" aria-label="Where is this Williams home">
             <img src="assests/photos/williamscollegelogo.avif" alt="Williams College" />
         </a>
-        
+
         <nav class="site-nav" aria-label="Main navigation">
             <a href="achievements.html">Achievements</a>
-            <a href="posts.html">Posts</a>
+            <a href="posts.html" aria-current="page">Posts</a>
             <a href="leaderboard.html">Leaderboard</a>
             <a href="history.html">History</a>
             <a href="podium.html">Podium of champions</a>
-            <a href="#about">About</a>
+            <a href="index.html#about">About</a>
             <button class="audio-toggle" id="audio-toggle" type="button" aria-label="Mute audio" aria-pressed="false">🔊</button>
             <button class="nav-logout" type="button" data-logout-button>Log Out</button>
         </nav>
     </header>
 
     <main class="app-shell">
-        <section class="about-panel" id="about">
-            <p class="eyebrow">About</p>
-            <h2>Made for the Purple Valley.</h2>
-            <p>
-                Created by a Williams College student, this game brings back memories for alumni, current
-                students, and community members while testing how well they know the Purple Valley.
-            </p>
-            <div class="about-points" aria-label="Game highlights">
-                <span>10 points per correct guess</span>
-                <span>Bonus points also available</span>
-                <span>Top 3 rewards</span>
+        <section class="dashboard-panel page-panel" id="posts">
+            <div>
+                <p class="eyebrow">Posts</p>
+                <h1>Weekly campus posts</h1>
+            </div>
+            <div class="posts-grid" id="posts-grid"></div>
+            <div class="posts-submit-bar">
+                <button class="secondary-button post-submit" type="button" id="posts-submit-button">Submit</button>
+                <p class="post-status" id="posts-submit-status" aria-live="polite"></p>
             </div>
         </section>
     </main>

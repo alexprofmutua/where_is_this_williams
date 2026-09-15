@@ -78,34 +78,47 @@ body.auth-pending .app-shell {
     min-width: 0;
 }
 
-.site-nav a {
+.site-nav a,
+.nav-logout {
     padding: 8px 10px;
     color: var(--ink);
+    background: transparent;
+    border: 0;
     font-size: 0.9rem;
     font-weight: 800;
     line-height: 1.15;
     text-decoration: none;
     border-radius: 8px;
     white-space: nowrap;
+    cursor: pointer;
 }
 
 .audio-toggle {
+    width: 38px;
     min-height: 34px;
-    padding: 0 12px;
-    color: white;
-    background: var(--purple);
+    padding: 0;
+    color: var(--ink);
+    background: transparent;
     border: 0;
-    border-radius: 8px;
+    border-radius: 999px;
     font: inherit;
-    font-size: 0.86rem;
+    font-size: 1.1rem;
     font-weight: 900;
     line-height: 1.15;
     white-space: nowrap;
     cursor: pointer;
 }
 
+.nav-logout {
+    color: var(--ink);
+    background: transparent;
+    border: 0;
+}
+
 .site-nav a:hover,
 .site-nav a:focus-visible,
+.nav-logout:hover,
+.nav-logout:focus-visible,
 .audio-toggle:hover,
 .audio-toggle:focus-visible {
     background: var(--gold);
@@ -134,6 +147,7 @@ body.auth-pending .app-shell {
     }
 
     .site-nav a,
+    .nav-logout,
     .audio-toggle {
         flex: 0 0 auto;
         min-height: 40px;
@@ -146,6 +160,268 @@ body.auth-pending .app-shell {
     width: min(1180px, 100%);
     display: grid;
     gap: 22px;
+}
+
+.login-page {
+    min-height: 100vh;
+    padding: clamp(18px, 5vw, 48px);
+    display: grid;
+    place-items: center;
+    background: #d8d8d2;
+}
+
+.login-shell {
+    width: 100%;
+    display: grid;
+    place-items: center;
+}
+
+.login-card {
+    display: contents;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.login-logo {
+    width: min(245px, 68vw);
+    display: block;
+    margin-bottom: 22px;
+}
+
+.login-form {
+    width: auto;
+    display: flex;
+    align-items: end;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px 18px;
+}
+
+.login-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.login-submit {
+    min-height: 42px;
+    width: auto;
+    padding: 0 18px;
+    border-radius: 8px;
+    justify-content: center;
+    font-size: 0.95rem;
+}
+
+.login-page .player-status:empty {
+    display: none;
+}
+
+.leaderboard-page .dashboard-panel,
+.history-page .dashboard-panel,
+.podium-page .dashboard-panel,
+.posts-page .dashboard-panel,
+.about-page .about-panel {
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+}
+
+.leaderboard-page,
+.history-page,
+.podium-page,
+.posts-page,
+.about-page {
+    background: #d8d8d2;
+    place-items: start center;
+    align-content: start;
+}
+
+.leaderboard-page .app-shell,
+.history-page .app-shell,
+.podium-page .app-shell,
+.about-page .app-shell {
+    width: min(920px, 100%);
+    justify-self: start;
+    margin-left: clamp(28px, 8vw, 128px);
+    transform: none;
+}
+
+.leaderboard-page .page-copy,
+.history-page .page-copy,
+.podium-page .page-copy,
+.posts-page .page-copy {
+    max-width: 620px;
+}
+
+.posts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+    gap: 26px;
+    margin-top: 24px;
+}
+
+.post-card {
+    display: grid;
+    gap: 12px;
+}
+
+.post-card img {
+    width: 100%;
+    aspect-ratio: 16 / 11;
+    display: block;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.post-card-body {
+    display: grid;
+    gap: 10px;
+}
+
+.post-card-topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--purple);
+    font-size: 0.82rem;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.post-card h2 {
+    margin: 0;
+    color: var(--ink);
+    font-size: 1.25rem;
+    line-height: 1.15;
+}
+
+.post-options {
+    display: grid;
+    gap: 8px;
+}
+
+.post-options button {
+    min-height: 42px;
+    padding: 8px 10px;
+    color: var(--ink);
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(75, 36, 128, 0.22);
+    border-radius: 8px;
+    font: inherit;
+    font-weight: 750;
+    text-align: left;
+}
+
+.post-options button.selected {
+    color: var(--ink);
+    background: var(--gold);
+    border-color: var(--purple);
+    box-shadow: 0 0 0 3px rgba(75, 36, 128, 0.2);
+}
+
+.post-comment-label {
+    display: grid;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.post-comment-label textarea {
+    width: 100%;
+    resize: vertical;
+    min-height: 92px;
+    padding: 10px;
+    color: var(--ink);
+    background: rgba(255, 255, 255, 0.62);
+    border: 1px solid rgba(75, 36, 128, 0.22);
+    border-radius: 8px;
+    font: inherit;
+    text-transform: none;
+}
+
+.post-status {
+    min-height: 1.2em;
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-weight: 750;
+}
+
+.posts-submit-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 28px;
+}
+
+.post-submit {
+    min-width: 120px;
+}
+
+.posts-submitted-message {
+    display: grid;
+    gap: 8px;
+    padding: 18px 0;
+}
+
+.posts-submitted-message strong {
+    color: var(--purple);
+    font-size: clamp(2rem, 5vw, 3rem);
+    line-height: 1.05;
+}
+
+.posts-submitted-message span {
+    color: var(--muted);
+    font-size: 1.2rem;
+    line-height: 1.35;
+}
+
+.history-page .eyebrow {
+    margin-top: 0;
+}
+
+.leaderboard-page .table-wrap,
+.history-page .table-wrap {
+    margin-top: 24px;
+    overflow: visible;
+}
+
+.leaderboard-page .history-table,
+.history-page .history-table {
+    min-width: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+}
+
+.leaderboard-page .history-table th,
+.leaderboard-page .history-table td,
+.history-page .history-table th,
+.history-page .history-table td {
+    padding: 14px 10px;
+    border-bottom: 1px solid rgba(75, 36, 128, 0.22);
+}
+
+.leaderboard-page .history-table th,
+.history-page .history-table th {
+    background: transparent;
+    color: var(--purple);
+    font-size: 0.82rem;
+}
+
+.leaderboard-page .history-table td,
+.history-page .history-table td {
+    color: #1f1f24;
+    font-size: 1rem;
 }
 
 .intro,
@@ -1595,6 +1871,63 @@ h2 {
     .leaderboard-table td:nth-child(2)::before { content: "Instagram"; }
     .leaderboard-table td:nth-child(3)::before { content: "Final score"; }
 
+    .leaderboard-page .history-table,
+    .history-page .history-table {
+        display: table;
+        width: 100%;
+    }
+
+    .leaderboard-page .history-table thead,
+    .history-page .history-table thead {
+        display: table-header-group;
+    }
+
+    .leaderboard-page .history-table tbody,
+    .history-page .history-table tbody {
+        display: table-row-group;
+    }
+
+    .leaderboard-page .history-table tr,
+    .history-page .history-table tr {
+        display: table-row;
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+    }
+
+    .leaderboard-page .history-table th,
+    .leaderboard-page .history-table td,
+    .history-page .history-table th,
+    .history-page .history-table td {
+        display: table-cell;
+        width: auto;
+        padding: 12px 6px;
+    }
+
+    .leaderboard-page .history-table td,
+    .history-page .history-table td {
+        border-bottom: 1px solid rgba(75, 36, 128, 0.22);
+    }
+
+    .leaderboard-page .history-table td::before,
+    .history-page .history-table td::before {
+        content: none;
+    }
+
+    .leaderboard-page .app-shell,
+    .history-page .app-shell,
+    .podium-page .app-shell,
+    .about-page .app-shell {
+        transform: none;
+        margin-left: 0;
+    }
+
+    .posts-page .app-shell {
+        width: 100%;
+    }
+
     .admin-stats-table td:nth-child(1)::before { content: "Page"; }
     .admin-stats-table td:nth-child(2)::before { content: "Visits"; }
 
@@ -1661,4 +1994,10 @@ h2 {
     .photo-playbar {
         grid-template-columns: 1fr;
     }
+}
+.posts-page .app-shell {
+    width: calc(100vw - clamp(48px, 10vw, 160px));
+    justify-self: center;
+    margin-left: 0;
+    transform: none;
 }

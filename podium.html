@@ -6,30 +6,30 @@
     <title>Podium of Champions | Where is this Williams College</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="requires-player auth-pending">
+<body class="podium-page requires-player auth-pending">
     <header class="about-site">
         <a href="index.html" class="site-logo" aria-label="Where is this Williams home">
             <img src="assests/photos/williamscollegelogo.avif" alt="Williams College" />
         </a>
 
         <nav class="site-nav" aria-label="Main navigation">
+            <a href="achievements.html">Achievements</a>
+            <a href="posts.html">Posts</a>
             <a href="leaderboard.html">Leaderboard</a>
             <a href="history.html">History</a>
-            <a href="achievements.html">Achievements</a>
             <a href="podium.html" aria-current="page">Podium of champions</a>
             <a href="index.html#about">About</a>
-            <button class="audio-toggle" id="audio-toggle" type="button" aria-pressed="false">Mute</button>
+            <button class="audio-toggle" id="audio-toggle" type="button" aria-label="Mute audio" aria-pressed="false">🔊</button>
+            <button class="nav-logout" type="button" data-logout-button>Log Out</button>
         </nav>
     </header>
 
     <main class="app-shell">
         <section class="dashboard-panel page-panel" id="podium">
             <div>
-                <p class="eyebrow">Podium of Champions</p>
-                <h1>Final winners</h1>
-                <p class="page-copy">
-                    First, second, and third place after the semester competition ends.
-                </p>
+                <h1>Podium of Champions</h1>
+                <p class="page-copy"><strong>Final winners have not been released yet.</strong></p>
+                <p class="page-copy">The Podium of Champions will show first, second, and third place only after the competition is finalized.</p>
             </div>
             <div class="champion-gallery" id="champion-gallery"></div>
         </section>
