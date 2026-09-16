@@ -1,4 +1,5 @@
 const ACTIVE_UNIX_KEY = "where-is-this-williams-active-unix";
+const AUTH_TOKEN_KEY = "where-is-this-williams-auth-token";
 const REMINDERS_KEY = "where-is-this-williams-reminders";
 const REFERRER_KEY = "where-is-this-williams-referrer";
 const AUDIO_MUTED_KEY = "where-is-this-williams-audio-muted";
@@ -16,6 +17,7 @@ let music = null;
 let questionEndsAt = null;
 let authMode = "signup";
 let authSubmitButton = null;
+let profileCompletionMode = false;
 
 const introScreen = document.querySelector("#intro-screen");
 const quizScreen = document.querySelector("#quiz-screen");
@@ -70,13 +72,25 @@ async function init() {
   authMode = getDefaultAuthMode();
   bindEvents();
   captureReferrer();
+  const verifiedSession = await completeEmailLoginFromHash();
   appData = await apiGet("/api/bootstrap");
-  activePlayer = await loadActivePlayer();
+  activePlayer = verifiedSession?.player || await loadActivePlayer();
+  if (verifiedSession?.player) localStorage.setItem(ACTIVE_UNIX_KEY, verifiedSession.player.unix);
+  if (isLoginPage() && verifiedSession?.needsProfile) {
+    document.body.classList.remove("auth-pending");
+    showProfileCompletion(verifiedSession.player);
+    return;
+  }
   if (document.body.classList.contains("requires-player") && !activePlayer) {
     redirectToLogin();
     return;
   }
   if (isLoginPage() && activePlayer) {
+    if (!hasDisplayProfile(activePlayer)) {
+      document.body.classList.remove("auth-pending");
+      showProfileCompletion(activePlayer);
+      return;
+    }
     redirectAfterLogin(activePlayer);
     return;
   }
@@ -110,6 +124,10 @@ function bindEvents() {
   logoutButtons.forEach((button) => button.addEventListener("click", logoutPlayer));
   postsGrid?.addEventListener("click", selectPostOption);
   postsSubmitButton?.addEventListener("click", submitPostSelections);
+  achievementList?.addEventListener("click", showAchievementDetail);
+  achievementList?.addEventListener("keydown", openAchievementDetailFromKeyboard);
+  cheersList?.addEventListener("click", showAchievementDetail);
+  cheersList?.addEventListener("keydown", openAchievementDetailFromKeyboard);
   if (!isLoginPage()) {
     ["pointerdown", "keydown", "touchstart"].forEach((eventName) => {
       window.addEventListener(eventName, startGameMusicOnce, { once: true, passive: true });
@@ -142,27 +160,81 @@ async function loadActivePlayer() {
 
 async function savePlayer(event) {
   event.preventDefault();
+  if (profileCompletionMode) {
+    await saveVerifiedProfile();
+    return;
+  }
+
   const email = emailInput.value.trim().toLowerCase();
-  const instagram = normalizeInstagram(instagramInput.value);
-  const payload = {
-    unix: email.split("@")[0],
-    email,
-    instagram,
-    screenName: instagram,
-    referredBy: localStorage.getItem(REFERRER_KEY) || "",
-    mode: authMode,
-  };
-  if (activePlayer?.avatar) payload.avatar = activePlayer.avatar;
-  if (activePlayer?.avatarImage) payload.avatarImage = activePlayer.avatarImage;
 
   try {
     setPlayerFormBusy(true);
-    const { player, created } = await apiPost("/api/players", payload);
+    await apiPost("/api/auth/send-link", {
+      email,
+      redirectTo: `${window.location.origin}${window.location.pathname}`,
+    });
+    playerStatus.textContent = "Check your Williams email for the login link.";
+  } catch (error) {
+    playerStatus.textContent = error.message;
+  } finally {
+    setPlayerFormBusy(false);
+  }
+}
+
+async function completeEmailLoginFromHash() {
+  if (!isLoginPage() || !window.location.hash.includes("access_token")) return null;
+  const params = new URLSearchParams(window.location.hash.slice(1));
+  const accessToken = params.get("access_token");
+  if (!accessToken) return null;
+
+  localStorage.setItem(AUTH_TOKEN_KEY, accessToken);
+  window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.search}`);
+
+  try {
+    const session = await apiPost("/api/auth/session", {
+      accessToken,
+      referredBy: localStorage.getItem(REFERRER_KEY) || "",
+    });
+    localStorage.setItem(ACTIVE_UNIX_KEY, session.player.unix);
+    return session;
+  } catch (error) {
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    if (playerStatus) playerStatus.textContent = error.message;
+    return null;
+  }
+}
+
+function showProfileCompletion(player) {
+  profileCompletionMode = true;
+  activePlayer = player;
+  localStorage.setItem(ACTIVE_UNIX_KEY, player.unix);
+  if (emailInput) {
+    emailInput.value = player.email || "";
+    emailInput.disabled = true;
+  }
+  if (instagramInput) {
+    instagramInput.required = true;
+    instagramInput.closest("label")?.classList.remove("hidden");
+    instagramInput.focus();
+  }
+  document.querySelectorAll("[data-submit-mode]").forEach((button) => {
+    button.classList.toggle("hidden", button !== savePlayerButton);
+  });
+  if (savePlayerButton) savePlayerButton.textContent = "Save Instagram";
+  if (playerStatus) playerStatus.textContent = "Add the Instagram username people will see on the leaderboard.";
+}
+
+async function saveVerifiedProfile() {
+  const instagram = normalizeInstagram(instagramInput.value);
+  try {
+    setPlayerFormBusy(true);
+    const { player } = await apiPost("/api/auth/profile", {
+      instagram,
+      referredBy: localStorage.getItem(REFERRER_KEY) || "",
+    });
     localStorage.setItem(ACTIVE_UNIX_KEY, player.unix);
     activePlayer = player;
-    if (isLoginPage()) return redirectAfterLogin(player);
-    syncPlayerView(created ? "created" : "login");
-    await renderPageData();
+    redirectAfterLogin(player);
   } catch (error) {
     playerStatus.textContent = error.message;
   } finally {
@@ -198,6 +270,7 @@ function redirectAfterLogin(player) {
 
 function logoutPlayer() {
   localStorage.removeItem(ACTIVE_UNIX_KEY);
+  localStorage.removeItem(AUTH_TOKEN_KEY);
   localStorage.removeItem("where-is-this-williams-admin-token");
   activePlayer = null;
   window.location.href = "login.html";
@@ -210,6 +283,10 @@ function syncPlayerView(mode = "saved") {
     playerForm.classList.remove("hidden");
     profileCard?.classList.add("hidden");
     setAuthMode(authMode);
+    if (instagramInput && isLoginPage()) {
+      instagramInput.required = false;
+      instagramInput.closest("label")?.classList.add("hidden");
+    }
     if (startButton) startButton.disabled = true;
     if (!isLoginPage()) playerStatus.textContent = "You can only play once, and I hope you have fun.";
     return;
@@ -235,6 +312,7 @@ function setAuthMode(mode) {
 
   if (isLoginPage() && !document.querySelector("[data-auth-mode]")) {
     if (playerStatus) playerStatus.textContent = "";
+    if (savePlayerButton) savePlayerButton.textContent = "Send Login Link";
     return;
   }
 
@@ -259,10 +337,14 @@ function setPlayerFormBusy(isBusy) {
   });
   if (isLoginPage()) {
     const activeButton = authSubmitButton || savePlayerButton;
-    activeButton.textContent = isBusy ? "Checking..." : authMode === "login" ? "Log In" : "Sign Up";
+    activeButton.textContent = isBusy ? "Checking..." : profileCompletionMode ? "Save Instagram" : authMode === "login" ? "Log In" : "Sign Up";
     return;
   }
   savePlayerButton.textContent = isBusy ? "Checking..." : authMode === "login" ? "Log In" : "Sign Up";
+}
+
+function hasDisplayProfile(player) {
+  return Boolean(normalizeInstagram(player?.instagram || player?.screenName));
 }
 
 function renderProfile() {
@@ -614,7 +696,7 @@ async function renderAchievements(target, options = {}) {
 
   target.innerHTML = visibleAchievements.length
     ? visibleAchievements.map((achievement) => `
-        <article class="achievement-card ${achievement.unlocked ? "unlocked" : "locked"}">
+        <article class="achievement-card ${achievement.unlocked ? "unlocked" : "locked"}" tabindex="0" role="button" data-achievement-title="${escapeHtml(achievement.title)}" data-achievement-description="${escapeHtml(achievement.description)}" data-achievement-state="${achievement.unlocked ? "Unlocked" : "Locked"}">
           <span>${escapeHtml(achievement.sticker)}</span>
           <strong>${options.congratulatory && achievement.unlocked ? "Congratulations! " : ""}${escapeHtml(achievement.title)}</strong>
           <em>${escapeHtml(achievement.description)}</em>
@@ -624,6 +706,7 @@ async function renderAchievements(target, options = {}) {
 
   renderCheers(cheers);
   renderReferralCard();
+  celebrateJoiningAchievement(achievements);
 }
 
 function renderCheers(cheers) {
@@ -631,12 +714,65 @@ function renderCheers(cheers) {
   const unlockedCount = cheers.filter((item) => item.unlocked).length;
   if (cheersCount) cheersCount.textContent = `Cheers (${unlockedCount}/${cheers.length})`;
   cheersList.innerHTML = cheers.map((item) => `
-    <article class="achievement-card cheers-card ${item.unlocked ? "unlocked" : "locked"}">
+    <article class="achievement-card cheers-card ${item.unlocked ? "unlocked" : "locked"}" tabindex="0" role="button" data-achievement-title="${escapeHtml(item.title)}" data-achievement-description="${escapeHtml(item.description)}" data-achievement-state="${item.unlocked ? "Unlocked" : "Locked"}">
       <span>${escapeHtml(item.sticker)}${item.count ? `<b>${escapeHtml(item.count)}</b>` : ""}</span>
       <strong>${escapeHtml(item.title)}</strong>
       <em>${escapeHtml(item.description)}</em>
     </article>
   `).join("");
+}
+
+function showAchievementDetail(event) {
+  const card = event.target.closest(".achievement-card");
+  if (!card) return;
+
+  document.querySelector(".achievement-detail")?.remove();
+  const detail = document.createElement("aside");
+  detail.className = "achievement-detail";
+  detail.innerHTML = `
+    <button type="button" aria-label="Close achievement details">×</button>
+    <small>${escapeHtml(card.dataset.achievementState || "")}</small>
+    <strong>${escapeHtml(card.dataset.achievementTitle || "")}</strong>
+    <p>${escapeHtml(card.dataset.achievementDescription || "")}</p>
+  `;
+  detail.querySelector("button").addEventListener("click", () => detail.remove());
+  document.body.append(detail);
+  window.setTimeout(() => detail.classList.add("visible"), 10);
+  window.setTimeout(() => detail.remove(), 5200);
+}
+
+function openAchievementDetailFromKeyboard(event) {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  if (!event.target.closest(".achievement-card")) return;
+  event.preventDefault();
+  showAchievementDetail(event);
+}
+
+function celebrateJoiningAchievement(achievements) {
+  if (!activePlayer || !achievementList) return;
+  const joined = achievements.find((achievement) => achievement.id === "joined" && achievement.unlocked);
+  if (!joined) return;
+
+  const celebrationKey = `where-is-this-williams-joined-celebrated-${activePlayer.unix}`;
+  if (localStorage.getItem(celebrationKey)) return;
+  localStorage.setItem(celebrationKey, "true");
+
+  const card = achievementList.querySelector('[data-achievement-title="Joined the Map"]');
+  card?.classList.add("fresh-unlock");
+
+  const toast = document.createElement("section");
+  toast.className = "achievement-celebration";
+  toast.innerHTML = `
+    <span aria-hidden="true">💜</span>
+    <strong>Achievement unlocked</strong>
+    <p>Joined the Map</p>
+  `;
+  document.body.append(toast);
+  window.setTimeout(() => toast.classList.add("visible"), 10);
+  window.setTimeout(() => {
+    toast.classList.remove("visible");
+    window.setTimeout(() => toast.remove(), 500);
+  }, 3600);
 }
 
 function renderReferralCard() {
@@ -647,10 +783,13 @@ function renderReferralCard() {
   const encodedMessage = encodeURIComponent(message);
   referralCard.innerHTML = `
     <strong>Your referral link</strong>
-    <span>${escapeHtml(url)}</span>
+    <div class="referral-link-row">
+      <span>${escapeHtml(url)}</span>
+      <button class="copy-referral-button" type="button" data-copy-share="Copy" title="Copy referral link" aria-label="Copy referral link">🔗</button>
+    </div>
     <div class="referral-actions" aria-label="Share your referral link">
       <a class="share-button" href="mailto:?subject=Where%20Is%20This%20Williams&body=${encodedMessage}" title="Email" aria-label="Share by email"><span aria-hidden="true">✉</span></a>
-      <a class="share-button" href="https://wa.me/?text=${encodedMessage}" target="_blank" rel="noopener" title="WhatsApp" aria-label="Share on WhatsApp">${shareIcon("web.whatsapp.com", "WhatsApp")}</a>
+      <a class="share-button whatsapp-share" href="https://wa.me/?text=${encodedMessage}" target="_blank" rel="noopener" title="WhatsApp" aria-label="Share on WhatsApp"><span aria-hidden="true">☎</span></a>
       <a class="share-button" href="https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}" target="_blank" rel="noopener" title="Facebook" aria-label="Share on Facebook">${shareIcon("facebook.com", "Facebook")}</a>
       <a class="share-button" href="https://twitter.com/intent/tweet?text=${encodedMessage}" target="_blank" rel="noopener" title="Twitter/X" aria-label="Share on Twitter or X">${shareIcon("x.com", "Twitter/X")}</a>
       <a class="share-button" href="https://groupme.com/share?text=${encodedMessage}" target="_blank" rel="noopener" title="GroupMe" aria-label="Share on GroupMe">${shareIcon("groupme.com", "GroupMe")}</a>
@@ -658,7 +797,7 @@ function renderReferralCard() {
       <button class="share-button" type="button" data-copy-share="Instagram" title="Instagram" aria-label="Copy link for Instagram">${shareIcon("instagram.com", "Instagram")}</button>
       <a class="share-button" href="sms:?body=${encodedMessage}" title="Messages" aria-label="Share by text message"><span aria-hidden="true">💬</span></a>
     </div>
-    <small id="referral-share-status">Share your link so friends can join from your invite.</small>
+    <small id="referral-share-status" aria-live="polite"></small>
   `;
   bindReferralShareButtons(url);
 }
@@ -671,7 +810,8 @@ function bindReferralShareButtons(url) {
   referralCard.querySelectorAll("[data-copy-share]").forEach((button) => {
     button.addEventListener("click", async () => {
       await copyReferralLink(url);
-      setReferralShareStatus(`Link copied. Paste it into ${button.dataset.copyShare}.`);
+      const target = button.dataset.copyShare;
+      setReferralShareStatus(target === "Copy" ? "Referral link copied." : `Referral link copied for ${target}.`);
     });
   });
 }
@@ -1032,12 +1172,17 @@ async function apiGet(path) {
 async function apiPost(path, body) {
   const response = await fetch(path, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(body),
   });
   const payload = await response.json();
   if (!response.ok) throw new Error(payload.error || "Request failed");
   return payload;
+}
+
+function authHeaders(base = {}) {
+  const token = localStorage.getItem(AUTH_TOKEN_KEY);
+  return token ? { ...base, Authorization: `Bearer ${token}` } : base;
 }
 
 function normalizeInstagram(value) {

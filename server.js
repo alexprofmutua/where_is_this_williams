@@ -13,6 +13,7 @@ const port = Number(process.env.PORT || 3000);
 const adminToken = process.env.ADMIN_TOKEN || "change-me";
 const supabaseUrl = (process.env.SUPABASE_URL || "").replace(/\/$/, "");
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || "";
 
 const mimeTypes = {
   ".avif": "image/avif",
@@ -94,6 +95,10 @@ function isSupabaseConfigured() {
   return Boolean(supabaseUrl && supabaseServiceRoleKey);
 }
 
+function isSupabaseAuthConfigured() {
+  return Boolean(supabaseUrl && supabaseAnonKey);
+}
+
 async function hydrateDbFromSupabase(db) {
   const [playerRows, voteRows] = await Promise.all([
     supabaseFetch("/rest/v1/witw_players?select=*"),
@@ -137,6 +142,23 @@ async function supabaseFetch(pathname, options = {}) {
   });
   const text = await response.text();
   if (!response.ok) throw new Error(`Supabase request failed: ${response.status} ${text}`);
+  return text ? JSON.parse(text) : null;
+}
+
+async function supabaseAuthFetch(pathname, options = {}) {
+  const headers = {
+    apikey: supabaseAnonKey,
+    Authorization: `Bearer ${options.accessToken || supabaseAnonKey}`,
+    "Content-Type": "application/json",
+  };
+
+  const response = await fetch(`${supabaseUrl}${pathname}`, {
+    method: options.method || "GET",
+    headers,
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+  const text = await response.text();
+  if (!response.ok) throw new Error(`Supabase auth request failed: ${response.status} ${text}`);
   return text ? JSON.parse(text) : null;
 }
 
@@ -206,8 +228,69 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (req.method === "POST" && url.pathname === "/api/auth/send-link") {
+    const body = await readJson(req);
+    const email = normalizeWilliamsEmail(body.email);
+    const redirectTo = normalizeRedirectUrl(body.redirectTo, req);
+    if (!isSupabaseAuthConfigured()) throw httpError(500, "Supabase auth is not configured yet.");
+
+    await supabaseAuthFetch("/auth/v1/otp", {
+      method: "POST",
+      body: {
+        email,
+        type: "magiclink",
+        options: {
+          email_redirect_to: redirectTo,
+        },
+      },
+    });
+    sendJson(res, 200, { sent: true });
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/auth/session") {
+    const body = await readJson(req);
+    const authUser = await verifySupabaseAccessToken(body.accessToken);
+    const player = upsertVerifiedPlayer(db, {
+      email: authUser.email,
+      referredBy: String(body.referredBy || "").trim().toLowerCase(),
+    });
+    await writeDb(db);
+    sendJson(res, 200, { player: publicPlayer(player), needsProfile: !hasDisplayProfile(player) });
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/auth/profile") {
+    const authUser = await authUserFromRequest(req);
+    const body = await readJson(req);
+    const instagram = normalizeInstagram(body.instagram);
+    if (!instagram) throw httpError(400, "Instagram username is required.");
+
+    const duplicate = Object.values(db.players || {}).find((player) => {
+      return player.unix !== authUser.unix && normalizeUsername(player.instagram || player.screenName).toLowerCase() === instagram.toLowerCase();
+    });
+    if (duplicate) throw httpError(409, "That Instagram username is already connected to another Williams email.");
+
+    const player = upsertVerifiedPlayer(db, { email: authUser.email, referredBy: String(body.referredBy || "").trim().toLowerCase() });
+    db.players[player.unix] = {
+      ...player,
+      instagram,
+      screenName: instagram,
+      realName: instagram,
+      verified: true,
+    };
+    await writeDb(db);
+    sendJson(res, 200, { player: publicPlayer(db.players[player.unix]) });
+    return;
+  }
+
   if (req.method === "POST" && url.pathname === "/api/players") {
     const body = await readJson(req);
+    if (isSupabaseAuthConfigured()) {
+      const authUser = await authUserFromRequest(req);
+      const targetUnix = String(body.unix || body.email?.split("@")[0] || "").trim().toLowerCase();
+      if (targetUnix && targetUnix !== authUser.unix) throw httpError(403, "You can only update your own profile.");
+    }
     const player = normalizePlayer(body);
     const existingPlayer = db.players[player.unix];
     if (existingPlayer && (existingPlayer.instagram || existingPlayer.screenName) !== player.instagram) {
@@ -243,7 +326,9 @@ async function handleApi(req, res, url) {
   }
 
   if (req.method === "POST" && url.pathname === "/api/votes") {
-    const vote = createVote(db, await readJson(req));
+    const body = await readJson(req);
+    await requirePlayerAuth(req, body.unix);
+    const vote = createVote(db, body);
     db.votes.push(vote);
     await writeDb(db);
     sendJson(res, 201, { vote: publicVote(db, vote) });
@@ -251,7 +336,9 @@ async function handleApi(req, res, url) {
   }
 
   if (req.method === "POST" && url.pathname === "/api/post-submissions") {
-    const votes = createPostSubmissionVotes(db, await readJson(req));
+    const body = await readJson(req);
+    await requirePlayerAuth(req, body.unix);
+    const votes = createPostSubmissionVotes(db, body);
     db.votes.push(...votes);
     await writeDb(db);
     sendJson(res, 201, { votes: votes.map((vote) => publicVote(db, vote)) });
@@ -600,29 +687,68 @@ function buildAchievements(db, unix) {
   });
   const revealedVotes = questionVotes.filter((vote) => vote.revealed);
   const correctVotes = revealedVotes.filter((vote) => vote.correct);
-  const questionCount = db.questions.filter((question) => question.kind !== "feedback").length;
+  const locationQuestions = db.questions.filter((question) => question.kind !== "feedback");
+  const questionCount = locationQuestions.length;
   const finalScore = votes.reduce((total, vote) => total + vote.points, 0);
   const leaderboardEntry = buildLeaderboard(db).find((leader) => normalizeUsername(leader.screenName) === normalizeUsername(db.players[unix]?.screenName));
   const firstCorrectIndex = questionVotes.findIndex((vote) => vote.correct);
+  const maxStreak = longestCorrectStreak(db, questionVotes);
+  const answeredQuestionIds = new Set(questionVotes.map((vote) => vote.questionId));
+  const firstQuestionAnswered = locationQuestions[0] ? answeredQuestionIds.has(locationQuestions[0].id) : false;
+  const halfTourCount = Math.ceil(questionCount / 2);
+  const bonusHunter = correctVotes.some((vote) => vote.bonusPoints > 0);
+  const suggestionLeft = feedbackVotes.some((vote) => String(vote.feedbackText || "").trim().length > 0);
+  const streakAchievements = Array.from({ length: Math.max(0, questionCount - 1) }, (_, index) => {
+    const length = index + 2;
+    return achievement(
+      `streak-${length}`,
+      `${length} Streak`,
+      length === questionCount ? "🔥" : "⚡",
+      `Award for guessing ${length} correct locations in a row.`,
+      maxStreak >= length
+    );
+  });
 
   return [
-    achievement("first-eye", "First Eye", "👁️", "Made your first guess.", questionVotes.length >= 1),
-    achievement("campus-scout", "Campus Scout", "🗺️", "Answered 3 photos.", questionVotes.length >= 3),
-    achievement("full-tour", "Full Tour", "🎒", "Answered every location photo.", questionVotes.length >= questionCount && questionCount > 0),
-    achievement("speed-runner", "Speed Runner", "⚡", "Finished the whole run.", votes.length >= db.questions.length && db.questions.length > 0),
-    achievement("sharp-eye", "Sharp Eye", "🎯", "Guessed one revealed photo right.", correctVotes.length >= 1),
-    achievement("campus-eye", "Campus Eye", "🏛️", "Guessed 3 revealed photos right.", correctVotes.length >= 3),
-    achievement("perfect-round", "Perfect Round", "💎", "Got every revealed location right.", revealedVotes.length > 0 && correctVotes.length === revealedVotes.length),
-    achievement("comeback", "Comeback", "🔁", "Got one right after a nice try.", firstCorrectIndex > 0),
-    achievement("feedback-friend", "Feedback Friend", "💬", "Left final feedback.", feedbackVotes.some((vote) => vote.feedbackText)),
-    achievement("better-place", "Making the App a Better Place", "🛠️", "Added a suggestion for the app.", feedbackVotes.some((vote) => String(vote.feedbackText || "").trim().length > 0)),
-    achievement("top-twelve", "Top 12 Glow", "⭐", "Reached the public Top 12 board.", Boolean(leaderboardEntry) && finalScore > 0),
-    achievement("top-mapper", "Top Mapper", "🧭", "Held the #1 rank.", leaderboardEntry?.place === 1 && finalScore > 0),
+    achievement("joined", "Joined the Map", "💜", "Award for joining Where Is This Williams.", Boolean(db.players[unix])),
+    achievement("first-eye", "First Eye", "👁️", "Award for making your first campus guess.", questionVotes.length >= 1),
+    achievement("opening-look", "Opening Look", "🚪", "Award for answering the first posted location.", firstQuestionAnswered),
+    achievement("campus-scout", "Campus Scout", "🗺️", "Award for answering 3 photos.", questionVotes.length >= 3),
+    achievement("halfway-hiker", "Halfway Hiker", "🥾", "Award for answering at least half of the location photos.", questionVotes.length >= halfTourCount && questionCount > 0),
+    achievement("full-tour", "Full Tour", "🎒", "Award for answering every location photo.", questionVotes.length >= questionCount && questionCount > 0),
+    achievement("speed-runner", "Speed Runner", "⏱️", "Award for finishing the full run, including the final suggestion card.", votes.length >= db.questions.length && db.questions.length > 0),
+    achievement("sharp-eye", "Sharp Eye", "🎯", "Award for guessing one revealed photo correctly.", correctVotes.length >= 1),
+    achievement("campus-eye", "Campus Eye", "🏛️", "Award for guessing 3 revealed photos correctly.", correctVotes.length >= 3),
+    ...streakAchievements,
+    achievement("bonus-hunter", "Bonus Hunter", "💰", "Award for earning bonus points on a harder location.", bonusHunter),
+    achievement("perfect-round", "Perfect Round", "💎", "Award for getting every revealed location right.", revealedVotes.length > 0 && correctVotes.length === revealedVotes.length),
+    achievement("comeback", "Comeback Kid", "🔁", "Award for getting one right after a nice try.", firstCorrectIndex > 0),
+    achievement("better-place", "Making the App Better", "🛠️", "Award for leaving a suggestion that can improve the app.", suggestionLeft),
+    achievement("top-twelve", "Top 12 Glow", "⭐", "Award for reaching the public Top 12 leaderboard.", Boolean(leaderboardEntry) && finalScore > 0),
+    achievement("top-mapper", "Top Mapper", "🧭", "Award for holding the number one rank at least once.", leaderboardEntry?.place === 1 && finalScore > 0),
   ];
 }
 
 function achievement(id, title, sticker, description, unlocked) {
   return { id, title, sticker, description, unlocked };
+}
+
+function longestCorrectStreak(db, votes) {
+  const votesByQuestion = new Map(votes.map((vote) => [vote.questionId, vote]));
+  let longest = 0;
+  let current = 0;
+
+  for (const question of db.questions.filter((item) => item.kind !== "feedback")) {
+    const vote = votesByQuestion.get(question.id);
+    if (vote?.revealed && vote.correct) {
+      current += 1;
+      longest = Math.max(longest, current);
+    } else if (vote?.revealed) {
+      current = 0;
+    }
+  }
+
+  return longest;
 }
 
 function buildCheers(db, unix) {
@@ -701,6 +827,83 @@ function normalizePlayer(body) {
     avatar: Object.hasOwn(body, "avatar") ? String(body.avatar || "💜") : undefined,
     avatarImage: Object.hasOwn(body, "avatarImage") ? (typeof body.avatarImage === "string" ? body.avatarImage : null) : undefined,
   };
+}
+
+function normalizeWilliamsEmail(value) {
+  const email = String(value || "").trim().toLowerCase();
+  if (!email) throw httpError(400, "Williams email is required.");
+  if (!email.endsWith("@williams.edu")) throw httpError(400, "Use a Williams email address.");
+  return email;
+}
+
+function unixFromEmail(email) {
+  return normalizeWilliamsEmail(email).split("@")[0];
+}
+
+function normalizeRedirectUrl(value, req) {
+  const fallback = `http://${req.headers.host}/login.html`;
+  const redirectTo = String(value || fallback).trim();
+  try {
+    const parsed = new URL(redirectTo);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") throw new Error("Invalid protocol");
+    return parsed.toString();
+  } catch {
+    return fallback;
+  }
+}
+
+async function verifySupabaseAccessToken(accessToken) {
+  if (!isSupabaseAuthConfigured()) throw httpError(500, "Supabase auth is not configured yet.");
+  if (!accessToken) throw httpError(401, "Login token required.");
+
+  let user;
+  try {
+    user = await supabaseAuthFetch("/auth/v1/user", { accessToken });
+  } catch {
+    throw httpError(401, "Login link expired. Send yourself a new login link.");
+  }
+
+  const email = normalizeWilliamsEmail(user?.email);
+  return { email, unix: unixFromEmail(email), id: user.id };
+}
+
+async function authUserFromRequest(req) {
+  const header = String(req.headers.authorization || "");
+  const match = header.match(/^Bearer\s+(.+)$/i);
+  if (!match) throw httpError(401, "Login token required.");
+  return verifySupabaseAccessToken(match[1]);
+}
+
+async function requirePlayerAuth(req, unix) {
+  if (!isSupabaseAuthConfigured()) return null;
+  const authUser = await authUserFromRequest(req);
+  const requestedUnix = String(unix || "").trim().toLowerCase();
+  if (!requestedUnix || requestedUnix !== authUser.unix) throw httpError(403, "You can only submit answers for your own account.");
+  return authUser;
+}
+
+function upsertVerifiedPlayer(db, { email, referredBy = "" }) {
+  const normalizedEmail = normalizeWilliamsEmail(email);
+  const unix = unixFromEmail(normalizedEmail);
+  const existingPlayer = db.players[unix];
+  const safeReferrer = referredBy && referredBy !== unix ? referredBy : existingPlayer?.referredBy;
+  db.players[unix] = {
+    ...existingPlayer,
+    unix,
+    email: normalizedEmail,
+    realName: existingPlayer?.realName || existingPlayer?.screenName || existingPlayer?.instagram || "",
+    screenName: existingPlayer?.screenName || existingPlayer?.instagram || "",
+    instagram: existingPlayer?.instagram || existingPlayer?.screenName || "",
+    avatar: existingPlayer?.avatar || "💜",
+    avatarImage: existingPlayer?.avatarImage,
+    referredBy: safeReferrer || undefined,
+    verified: true,
+  };
+  return db.players[unix];
+}
+
+function hasDisplayProfile(player) {
+  return Boolean(normalizeInstagram(player?.instagram || player?.screenName));
 }
 
 function publicPlayer(player) {

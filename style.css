@@ -5,6 +5,7 @@
     --paper: #f7f3ea;
     --card: white;
     --purple: #4b2480;
+    --selection-purple: #7b4bc2;
     --gold: #f3c44d;
     --green:#177245;
     --red:#b83a3a;
@@ -46,9 +47,9 @@ body.auth-pending .app-shell {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 24px;
-    margin-bottom: clamp(28px, 4vw, 48px);
-    padding: 16px 22px;
+    gap: clamp(12px, 2vw, 20px);
+    margin-bottom: clamp(22px, 3vw, 36px);
+    padding: 10px 16px;
     background: rgba(225, 255, 255, 0.94);
     border: 1px solid rgba(255, 255, 255, 0.75);
     border-radius: 8px;
@@ -57,8 +58,8 @@ body.auth-pending .app-shell {
 
 .site-logo {
     display: block;
-    width: 82px;
-    height: 58px;
+    width: 68px;
+    height: 48px;
     flex: 0 0 auto;
     text-decoration: none;
 }
@@ -74,17 +75,19 @@ body.auth-pending .app-shell {
 .site-nav {
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: flex-end;
+    gap: clamp(4px, 0.8vw, 10px);
     min-width: 0;
+    flex: 1 1 auto;
 }
 
 .site-nav a,
 .nav-logout {
-    padding: 8px 10px;
+    padding: 7px 8px;
     color: var(--ink);
     background: transparent;
     border: 0;
-    font-size: 0.9rem;
+    font-size: clamp(0.78rem, 1vw, 0.88rem);
     font-weight: 800;
     line-height: 1.15;
     text-decoration: none;
@@ -94,8 +97,8 @@ body.auth-pending .app-shell {
 }
 
 .audio-toggle {
-    width: 38px;
-    min-height: 34px;
+    width: 34px;
+    min-height: 32px;
     padding: 0;
     color: var(--ink);
     background: transparent;
@@ -129,19 +132,19 @@ body.auth-pending .app-shell {
 @media (max-width: 760px) {
     .about-site {
         align-items: center;
-        gap: 12px;
-        padding: 12px;
+        gap: 10px;
+        padding: 9px 10px;
     }
 
     .site-logo {
-        width: 74px;
-        height: 52px;
+        width: 58px;
+        height: 42px;
     }
 
     .site-nav {
         width: 100%;
         overflow-x: auto;
-        gap: 8px;
+        gap: 6px;
         padding-bottom: 4px;
         scrollbar-width: thin;
     }
@@ -150,7 +153,7 @@ body.auth-pending .app-shell {
     .nav-logout,
     .audio-toggle {
         flex: 0 0 auto;
-        min-height: 40px;
+        min-height: 34px;
         display: inline-flex;
         align-items: center;
     }
@@ -167,7 +170,7 @@ body.auth-pending .app-shell {
     padding: clamp(18px, 5vw, 48px);
     display: grid;
     place-items: center;
-    background: #d8d8d2;
+    background: var(--purple);
 }
 
 .login-shell {
@@ -216,6 +219,57 @@ body.auth-pending .app-shell {
     font-size: 0.95rem;
 }
 
+.login-page .player-card label {
+    color: white;
+    font-size: 0.82rem;
+    font-weight: 900;
+}
+
+.login-page .player-card input {
+    min-height: 46px;
+    color: var(--ink);
+    background: white;
+    border-color: rgba(255, 255, 255, 0.76);
+    box-shadow: 0 10px 24px rgba(22, 10, 44, 0.18);
+}
+
+.login-page .player-card input::placeholder {
+    color: rgba(0, 0, 0, 0.48);
+}
+
+.login-page .secondary-button.login-submit {
+    color: var(--purple);
+    background: white;
+    border-color: white;
+    box-shadow: 0 10px 24px rgba(22, 10, 44, 0.22);
+}
+
+.login-page .secondary-button.login-submit:hover,
+.login-page .secondary-button.login-submit:focus-visible {
+    color: var(--purple);
+    background: var(--gold);
+    border-color: var(--gold);
+}
+
+.login-page .primary-button.login-submit {
+    color: var(--purple);
+    background: var(--gold);
+    border: 2px solid var(--gold);
+    box-shadow: 0 10px 24px rgba(22, 10, 44, 0.24);
+}
+
+.login-page .primary-button.login-submit:hover,
+.login-page .primary-button.login-submit:focus-visible {
+    color: var(--purple);
+    background: white;
+    border-color: white;
+}
+
+.login-page .player-status {
+    color: white;
+    font-weight: 800;
+}
+
 .login-page .player-status:empty {
     display: none;
 }
@@ -223,6 +277,7 @@ body.auth-pending .app-shell {
 .leaderboard-page .dashboard-panel,
 .history-page .dashboard-panel,
 .podium-page .dashboard-panel,
+.achievements-route .dashboard-panel,
 .posts-page .dashboard-panel,
 .about-page .about-panel {
     padding: 0;
@@ -234,9 +289,10 @@ body.auth-pending .app-shell {
 .leaderboard-page,
 .history-page,
 .podium-page,
+.achievements-route,
 .posts-page,
 .about-page {
-    background: #d8d8d2;
+    background: var(--purple);
     place-items: start center;
     align-content: start;
 }
@@ -244,6 +300,7 @@ body.auth-pending .app-shell {
 .leaderboard-page .app-shell,
 .history-page .app-shell,
 .podium-page .app-shell,
+.achievements-route .app-shell,
 .about-page .app-shell {
     width: min(920px, 100%);
     justify-self: start;
@@ -256,6 +313,38 @@ body.auth-pending .app-shell {
 .podium-page .page-copy,
 .posts-page .page-copy {
     max-width: 620px;
+}
+
+.podium-page .page-panel h1 {
+    font-size: clamp(1.25rem, 2.2vw, 1.7rem);
+    line-height: 1.2;
+}
+
+.leaderboard-page .eyebrow,
+.history-page .eyebrow,
+.podium-page .eyebrow,
+.posts-page .eyebrow,
+.achievements-route .eyebrow,
+.about-page .eyebrow {
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.leaderboard-page .page-panel h1,
+.history-page .page-panel h1,
+.podium-page .page-panel h1,
+.posts-page .page-panel h1,
+.achievements-route .achievements-header h1,
+.about-page .about-panel h1,
+.about-page .about-panel h2 {
+    color: white;
+}
+
+.leaderboard-page .page-copy,
+.history-page .page-copy,
+.podium-page .page-copy,
+.posts-page .page-copy,
+.about-page .about-panel p {
+    color: rgba(255, 255, 255, 0.82);
 }
 
 .posts-grid {
@@ -319,10 +408,10 @@ body.auth-pending .app-shell {
 }
 
 .post-options button.selected {
-    color: var(--ink);
-    background: var(--gold);
-    border-color: var(--purple);
-    box-shadow: 0 0 0 3px rgba(75, 36, 128, 0.2);
+    color: white;
+    background: var(--selection-purple);
+    border-color: #cbb7ff;
+    box-shadow: 0 0 0 3px rgba(203, 183, 255, 0.28), 0 10px 22px rgba(75, 36, 128, 0.22);
 }
 
 .post-comment-label {
@@ -387,6 +476,10 @@ body.auth-pending .app-shell {
 
 .history-page .eyebrow {
     margin-top: 0;
+    font-size: clamp(1.25rem, 2.2vw, 1.7rem);
+    line-height: 1.2;
+    letter-spacing: 0;
+    text-transform: none;
 }
 
 .leaderboard-page .table-wrap,
@@ -401,6 +494,7 @@ body.auth-pending .app-shell {
     background: transparent;
     border: 0;
     border-radius: 0;
+    overflow: visible;
 }
 
 .leaderboard-page .history-table th,
@@ -408,19 +502,25 @@ body.auth-pending .app-shell {
 .history-page .history-table th,
 .history-page .history-table td {
     padding: 14px 10px;
-    border-bottom: 1px solid rgba(75, 36, 128, 0.22);
+}
+
+.leaderboard-page .history-table th,
+.leaderboard-page .history-table td,
+.history-page .history-table th,
+.history-page .history-table td {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.28);
 }
 
 .leaderboard-page .history-table th,
 .history-page .history-table th {
     background: transparent;
-    color: var(--purple);
+    color: var(--gold);
     font-size: 0.82rem;
 }
 
 .leaderboard-page .history-table td,
 .history-page .history-table td {
-    color: #1f1f24;
+    color: white;
     font-size: 1rem;
 }
 
@@ -474,7 +574,7 @@ body.auth-pending .app-shell {
 .about-panel p:not(.eyebrow) {
     max-width: 680px;
     margin: 12px 0 0;
-    color: var(--muted);
+    color: rgba(255, 255, 255, 0.88);
     font-size: 1rem;
     line-height: 1.6;
 }
@@ -488,8 +588,8 @@ body.auth-pending .app-shell {
 
 .about-points span {
     padding: 8px 12px;
-    color: white;
-    background: var(--purple);
+    color: var(--purple);
+    background: var(--gold);
     border-radius: 8px;
     font-size: 0.9rem;
     font-weight: 800;
@@ -1013,6 +1113,18 @@ h2 {
     border-radius: 8px;
     overflow: hidden;
     overflow-wrap: anywhere;
+    cursor: pointer;
+    transition: transform 160ms ease, opacity 160ms ease;
+}
+
+.achievement-card:hover,
+.achievement-card:focus-visible {
+    transform: translateY(-3px);
+    outline: none;
+}
+
+.achievement-card:focus-visible span {
+    box-shadow: 0 0 0 4px rgba(243, 196, 77, 0.48), inset -18px -18px 0 rgba(0, 0, 0, 0.12);
 }
 
 .achievement-card span {
@@ -1092,6 +1204,121 @@ h2 {
     font-size: clamp(2rem, 7vw, 4rem);
 }
 
+.achievement-card.fresh-unlock span {
+    animation: sticker-pop 720ms cubic-bezier(0.2, 0.9, 0.2, 1.2), sticker-glow 1200ms ease;
+}
+
+.achievement-detail {
+    width: min(360px, calc(100vw - 32px));
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    z-index: 50;
+    display: grid;
+    gap: 8px;
+    padding: 18px 44px 18px 18px;
+    color: var(--ink);
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(79, 38, 131, 0.18);
+    border-radius: 8px;
+    box-shadow: 0 18px 42px rgba(36, 24, 54, 0.22);
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 200ms ease, transform 200ms ease;
+}
+
+.achievement-detail.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.achievement-detail button {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    border: 0;
+    color: var(--muted);
+    background: transparent;
+    font-size: 1.5rem;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.achievement-detail small {
+    color: var(--purple);
+    font-size: 0.76rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.achievement-detail strong {
+    color: var(--purple);
+    font-size: 1.3rem;
+    line-height: 1.1;
+}
+
+.achievement-detail p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.45;
+}
+
+.achievement-celebration {
+    min-width: min(360px, calc(100vw - 32px));
+    position: fixed;
+    left: 50%;
+    top: 28px;
+    z-index: 60;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 14px;
+    align-items: center;
+    padding: 16px 20px;
+    color: var(--ink);
+    background: #fffaf0;
+    border: 2px solid var(--gold);
+    border-radius: 8px;
+    box-shadow: 0 18px 48px rgba(36, 24, 54, 0.22);
+    opacity: 0;
+    transform: translate(-50%, -18px) scale(0.96);
+    transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.achievement-celebration.visible {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+}
+
+.achievement-celebration span {
+    grid-row: span 2;
+    width: 58px;
+    height: 58px;
+    display: grid;
+    place-items: center;
+    color: white;
+    background: var(--purple);
+    border: 4px solid var(--gold);
+    border-radius: 999px;
+    font-size: 1.8rem;
+    animation: sticker-pop 680ms cubic-bezier(0.2, 0.9, 0.2, 1.2);
+}
+
+.achievement-celebration strong {
+    color: var(--purple);
+    font-size: 0.82rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.achievement-celebration p {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 900;
+}
+
 .achievement-empty {
     grid-column: 1 / -1;
     margin: 0;
@@ -1128,33 +1355,79 @@ h2 {
 }
 
 .referral-card {
+    width: 100%;
     display: grid;
-    gap: 8px;
+    gap: 12px;
     margin-top: 22px;
-    padding: 14px 16px;
+    padding: 14px 18px;
     color: white;
     background: rgba(0, 0, 0, 0.18);
     border-radius: 8px;
 }
 
-.referral-card span {
+.referral-link-row {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    max-width: 100%;
+    padding-bottom: 2px;
+}
+
+.referral-link-row span {
+    min-width: 0;
     overflow-wrap: anywhere;
-    color: rgba(255, 255, 255, 0.82);
+    color: rgba(255, 255, 255, 0.84);
+    font-size: clamp(0.95rem, 1.6vw, 1.12rem);
+    line-height: 1.35;
 }
 
-.referral-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 6px;
-}
-
+.copy-referral-button,
 .share-button {
-    width: 44px;
-    height: 44px;
+    flex: 0 0 auto;
+}
+
+.copy-referral-button {
+    width: 38px;
+    height: 38px;
+    min-height: 38px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    padding: 0;
+    color: var(--purple);
+    background: white;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    border-radius: 999px;
+    font: inherit;
+    font-size: 1.2rem;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.copy-referral-button:hover,
+.copy-referral-button:focus-visible {
+    background: var(--gold);
+    outline: none;
+}
+
+.referral-actions {
+    width: min(100%, 680px);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(42px, 1fr));
+    align-items: center;
+    gap: 10px;
+    margin-top: 0;
+}
+
+.share-button {
+    width: 42px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    justify-self: start;
     padding: 0;
     color: var(--ink);
     background: rgba(255, 255, 255, 0.9);
@@ -1180,7 +1453,14 @@ h2 {
     object-fit: contain;
 }
 
+.whatsapp-share {
+    color: white;
+    background: #25d366;
+    font-size: 1.35rem;
+}
+
 .referral-card small {
+    overflow-wrap: anywhere;
     color: rgba(255, 255, 255, 0.78);
     line-height: 1.35;
 }
@@ -1221,9 +1501,16 @@ h2 {
     }
 }
 
+.achievements-route .app-shell {
+    width: calc(100vw - clamp(48px, 10vw, 160px));
+    max-width: 1320px;
+    justify-self: center;
+    margin-left: 0;
+}
+
 .achievements-page {
-    background: #a7a7a7;
-    border-color: #a7a7a7;
+    background: transparent;
+    border-color: transparent;
 }
 
 .achievements-header {
@@ -1237,6 +1524,18 @@ h2 {
 .achievements-header h1 {
     color: white;
     font-size: clamp(2rem, 5vw, 3rem);
+}
+
+.achievements-route .achievement-card strong {
+    color: white;
+}
+
+.achievements-route .achievement-card em {
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.achievements-route .achievement-empty {
+    color: rgba(255, 255, 255, 0.78);
 }
 
 .champion-gallery {
@@ -1588,10 +1887,10 @@ h2 {
 }
 
 .answer-button.selected {
-    color: var(--ink);
-    background: var(--gold);
-    border-color: var(--purple);
-    box-shadow: 0 0 0 4px rgba(75, 36, 128, 0.24), 0 12px 28px rgba(75, 36, 128, 0.24);
+    color: white;
+    background: var(--selection-purple);
+    border-color: #cbb7ff;
+    box-shadow: 0 0 0 4px rgba(203, 183, 255, 0.32), 0 12px 28px rgba(75, 36, 128, 0.24);
 }
 
 .answer-button.correct {
@@ -1690,6 +1989,7 @@ h2 {
     }
 
     .site-nav a,
+    .nav-logout,
     .audio-toggle {
         max-width: 72vw;
     }
@@ -1754,6 +2054,7 @@ h2 {
     }
 
     .referral-actions {
+        justify-content: flex-start;
         gap: 10px;
     }
 
@@ -1906,9 +2207,12 @@ h2 {
         padding: 12px 6px;
     }
 
-    .leaderboard-page .history-table td,
+    .leaderboard-page .history-table td {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.28);
+    }
+
     .history-page .history-table td {
-        border-bottom: 1px solid rgba(75, 36, 128, 0.22);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.28);
     }
 
     .leaderboard-page .history-table td::before,
@@ -1919,12 +2223,14 @@ h2 {
     .leaderboard-page .app-shell,
     .history-page .app-shell,
     .podium-page .app-shell,
+    .achievements-route .app-shell,
     .about-page .app-shell {
         transform: none;
         margin-left: 0;
     }
 
-    .posts-page .app-shell {
+    .posts-page .app-shell,
+    .achievements-route .app-shell {
         width: 100%;
     }
 
@@ -1968,6 +2274,10 @@ h2 {
         padding: 14px;
     }
 
+    .achievements-route .dashboard-panel {
+        padding: 0;
+    }
+
     .achievement-grid {
         grid-template-columns: 1fr 1fr;
         gap: 10px;
@@ -1981,7 +2291,20 @@ h2 {
         min-height: 180px;
     }
 
+    .referral-link-row {
+        grid-template-columns: 1fr;
+    }
+
+    .copy-referral-button {
+        justify-self: start;
+    }
+
+    .referral-actions {
+        grid-template-columns: repeat(auto-fit, minmax(46px, 46px));
+    }
+
     .site-nav a,
+    .nav-logout,
     .audio-toggle {
         font-size: 0.82rem;
     }
