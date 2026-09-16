@@ -185,12 +185,14 @@ async function completeEmailLoginFromHash() {
   if (!isLoginPage()) return null;
   const hashParams = new URLSearchParams(window.location.hash.slice(1));
   const searchParams = new URLSearchParams(window.location.search);
-  const accessToken = hashParams.get("access_token");
-  const code = searchParams.get("code");
+  const nestedAuthParams = authParamsFromNextUrl(searchParams.get("next"));
+  const accessToken = hashParams.get("access_token") || nestedAuthParams.get("access_token");
+  const code = searchParams.get("code") || nestedAuthParams.get("code");
   if (!accessToken && !code) return null;
 
   if (accessToken) localStorage.setItem(AUTH_TOKEN_KEY, accessToken);
   searchParams.delete("code");
+  searchParams.delete("next");
   const cleanSearch = searchParams.toString();
   window.history.replaceState({}, document.title, `${window.location.pathname}${cleanSearch ? `?${cleanSearch}` : ""}`);
 
@@ -207,6 +209,18 @@ async function completeEmailLoginFromHash() {
     localStorage.removeItem(AUTH_TOKEN_KEY);
     if (playerStatus) playerStatus.textContent = error.message;
     return null;
+  }
+}
+
+function authParamsFromNextUrl(nextUrl) {
+  if (!nextUrl) return new URLSearchParams();
+  try {
+    const parsed = new URL(nextUrl, window.location.origin);
+    if (parsed.hash) return new URLSearchParams(parsed.hash.slice(1));
+    return parsed.searchParams;
+  } catch {
+    const hashIndex = String(nextUrl).indexOf("#");
+    return hashIndex >= 0 ? new URLSearchParams(String(nextUrl).slice(hashIndex + 1)) : new URLSearchParams();
   }
 }
 
