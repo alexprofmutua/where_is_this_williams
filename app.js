@@ -173,7 +173,7 @@ async function savePlayer(event) {
       email,
       redirectTo: `${window.location.origin}${window.location.pathname}`,
     });
-    playerStatus.textContent = "Check your Williams email for the login link.";
+    playerStatus.textContent = "Check your Williams email to continue.";
   } catch (error) {
     playerStatus.textContent = error.message;
   } finally {
@@ -318,7 +318,7 @@ function setAuthMode(mode) {
 
   if (isLoginPage() && !document.querySelector("[data-auth-mode]")) {
     if (playerStatus) playerStatus.textContent = "";
-    if (savePlayerButton) savePlayerButton.textContent = "Send Login Link";
+    if (savePlayerButton) savePlayerButton.textContent = "Continue";
     return;
   }
 
@@ -343,7 +343,7 @@ function setPlayerFormBusy(isBusy) {
   });
   if (isLoginPage()) {
     const activeButton = authSubmitButton || savePlayerButton;
-    activeButton.textContent = isBusy ? "Checking..." : profileCompletionMode ? "Save Instagram" : authMode === "login" ? "Log In" : "Sign Up";
+    activeButton.textContent = isBusy ? "Checking..." : profileCompletionMode ? "Save Instagram" : "Continue";
     return;
   }
   savePlayerButton.textContent = isBusy ? "Checking..." : authMode === "login" ? "Log In" : "Sign Up";
