@@ -250,13 +250,14 @@ async function handleApi(req, res, url) {
 
   if (req.method === "POST" && url.pathname === "/api/auth/session") {
     const body = await readJson(req);
-    const authUser = await verifySupabaseAccessToken(body.accessToken);
+    const accessToken = body.accessToken || await exchangeSupabaseCode(body.code);
+    const authUser = await verifySupabaseAccessToken(accessToken);
     const player = upsertVerifiedPlayer(db, {
       email: authUser.email,
       referredBy: String(body.referredBy || "").trim().toLowerCase(),
     });
     await writeDb(db);
-    sendJson(res, 200, { player: publicPlayer(player), needsProfile: !hasDisplayProfile(player) });
+    sendJson(res, 200, { accessToken, player: publicPlayer(player), needsProfile: !hasDisplayProfile(player) });
     return;
   }
 
@@ -865,6 +866,25 @@ async function verifySupabaseAccessToken(accessToken) {
 
   const email = normalizeWilliamsEmail(user?.email);
   return { email, unix: unixFromEmail(email), id: user.id };
+}
+
+async function exchangeSupabaseCode(code) {
+  if (!isSupabaseAuthConfigured()) throw httpError(500, "Supabase auth is not configured yet.");
+  const authCode = String(code || "").trim();
+  if (!authCode) throw httpError(401, "Login code required.");
+
+  let session;
+  try {
+    session = await supabaseAuthFetch("/auth/v1/token?grant_type=authorization_code", {
+      method: "POST",
+      body: { auth_code: authCode },
+    });
+  } catch {
+    throw httpError(401, "Login link expired or already used. Send yourself a fresh login link.");
+  }
+
+  if (!session?.access_token) throw httpError(401, "Login link did not return a session. Send yourself a fresh login link.");
+  return session.access_token;
 }
 
 async function authUserFromRequest(req) {

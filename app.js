@@ -182,19 +182,25 @@ async function savePlayer(event) {
 }
 
 async function completeEmailLoginFromHash() {
-  if (!isLoginPage() || !window.location.hash.includes("access_token")) return null;
-  const params = new URLSearchParams(window.location.hash.slice(1));
-  const accessToken = params.get("access_token");
-  if (!accessToken) return null;
+  if (!isLoginPage()) return null;
+  const hashParams = new URLSearchParams(window.location.hash.slice(1));
+  const searchParams = new URLSearchParams(window.location.search);
+  const accessToken = hashParams.get("access_token");
+  const code = searchParams.get("code");
+  if (!accessToken && !code) return null;
 
-  localStorage.setItem(AUTH_TOKEN_KEY, accessToken);
-  window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.search}`);
+  if (accessToken) localStorage.setItem(AUTH_TOKEN_KEY, accessToken);
+  searchParams.delete("code");
+  const cleanSearch = searchParams.toString();
+  window.history.replaceState({}, document.title, `${window.location.pathname}${cleanSearch ? `?${cleanSearch}` : ""}`);
 
   try {
     const session = await apiPost("/api/auth/session", {
       accessToken,
+      code,
       referredBy: localStorage.getItem(REFERRER_KEY) || "",
     });
+    if (session.accessToken) localStorage.setItem(AUTH_TOKEN_KEY, session.accessToken);
     localStorage.setItem(ACTIVE_UNIX_KEY, session.player.unix);
     return session;
   } catch (error) {
