@@ -35,6 +35,12 @@ const emailInput = document.querySelector("#email-input");
 const passwordInput = document.querySelector("#password-input");
 const instagramInput = document.querySelector("#instagram-input");
 const savePlayerButton = document.querySelector("#save-player-button");
+const forgotPasswordButton = document.querySelector("#forgot-password-button");
+const resetPasswordForm = document.querySelector("#reset-password-form");
+const resetEmailInput = document.querySelector("#reset-email-input");
+const newPasswordInput = document.querySelector("#new-password-input");
+const resetPasswordButton = document.querySelector("#reset-password-button");
+const resetPasswordStatus = document.querySelector("#reset-password-status");
 const playerStatus = document.querySelector("#player-status");
 const profileCard = document.querySelector("#profile-card");
 const profileAvatar = document.querySelector("#profile-avatar");
@@ -73,6 +79,11 @@ async function init() {
   authMode = getDefaultAuthMode();
   bindEvents();
   captureReferrer();
+  const resetSession = await completeResetPasswordFromUrl();
+  if (resetSession) {
+    document.body.classList.remove("auth-pending");
+    return;
+  }
   const verifiedSession = await completeEmailLoginFromHash();
   appData = await apiGet("/api/bootstrap");
   activePlayer = verifiedSession?.player || await loadActivePlayer();
@@ -107,6 +118,8 @@ async function init() {
 
 function bindEvents() {
   playerForm?.addEventListener("submit", savePlayer);
+  forgotPasswordButton?.addEventListener("click", requestPasswordResetFromLogin);
+  resetPasswordForm?.addEventListener("submit", handlePasswordResetSubmit);
   document.querySelectorAll("[data-submit-mode]").forEach((button) => {
     button.addEventListener("click", () => {
       authMode = button.dataset.submitMode === "login" ? "login" : "signup";
@@ -212,18 +225,11 @@ async function savePlayer(event) {
 
 async function completeEmailLoginFromHash() {
   if (!isLoginPage()) return null;
-  const hashParams = new URLSearchParams(window.location.hash.slice(1));
-  const searchParams = new URLSearchParams(window.location.search);
-  const nestedAuthParams = authParamsFromNextUrl(searchParams.get("next"));
-  const accessToken = hashParams.get("access_token") || nestedAuthParams.get("access_token");
-  const code = searchParams.get("code") || nestedAuthParams.get("code");
+  const { accessToken, code, searchParams } = authReturnFromLocation();
   if (!accessToken && !code) return null;
 
   if (accessToken) localStorage.setItem(AUTH_TOKEN_KEY, accessToken);
-  searchParams.delete("code");
-  searchParams.delete("next");
-  const cleanSearch = searchParams.toString();
-  window.history.replaceState({}, document.title, `${window.location.pathname}${cleanSearch ? `?${cleanSearch}` : ""}`);
+  clearAuthParamsFromUrl(searchParams);
 
   try {
     const session = await apiPost("/api/auth/session", {
@@ -241,6 +247,48 @@ async function completeEmailLoginFromHash() {
   }
 }
 
+async function completeResetPasswordFromUrl() {
+  if (!isResetPasswordPage()) return null;
+  const { accessToken, code, type, searchParams } = authReturnFromLocation();
+  if (!accessToken && !code) return null;
+
+  try {
+    let token = accessToken;
+    if (!token) {
+      const session = await apiPost("/api/auth/session", { code });
+      token = session.accessToken;
+    }
+    if (token) localStorage.setItem(AUTH_TOKEN_KEY, token);
+    clearAuthParamsFromUrl(searchParams);
+    showNewPasswordStep(type === "recovery" ? "Enter a new password." : "Enter a new password.");
+    return { accessToken: token };
+  } catch (error) {
+    clearAuthParamsFromUrl(searchParams);
+    if (resetPasswordStatus) resetPasswordStatus.textContent = error.message;
+    return null;
+  }
+}
+
+function authReturnFromLocation() {
+  const hashParams = new URLSearchParams(window.location.hash.slice(1));
+  const searchParams = new URLSearchParams(window.location.search);
+  const nestedAuthParams = authParamsFromNextUrl(searchParams.get("next"));
+  return {
+    accessToken: hashParams.get("access_token") || nestedAuthParams.get("access_token"),
+    code: searchParams.get("code") || nestedAuthParams.get("code"),
+    type: hashParams.get("type") || nestedAuthParams.get("type") || searchParams.get("type"),
+    searchParams,
+  };
+}
+
+function clearAuthParamsFromUrl(searchParams) {
+  searchParams.delete("code");
+  searchParams.delete("next");
+  searchParams.delete("type");
+  const cleanSearch = searchParams.toString();
+  window.history.replaceState({}, document.title, `${window.location.pathname}${cleanSearch ? `?${cleanSearch}` : ""}`);
+}
+
 function authParamsFromNextUrl(nextUrl) {
   if (!nextUrl) return new URLSearchParams();
   try {
@@ -251,6 +299,88 @@ function authParamsFromNextUrl(nextUrl) {
     const hashIndex = String(nextUrl).indexOf("#");
     return hashIndex >= 0 ? new URLSearchParams(String(nextUrl).slice(hashIndex + 1)) : new URLSearchParams();
   }
+}
+
+async function requestPasswordResetFromLogin() {
+  const email = emailInput?.value.trim().toLowerCase();
+  if (!email) {
+    playerStatus.textContent = "Enter your Williams email first.";
+    emailInput?.focus();
+    return;
+  }
+
+  try {
+    forgotPasswordButton.disabled = true;
+    playerStatus.textContent = "Sending password reset...";
+    await apiPost("/api/auth/password-reset-request", {
+      email,
+      redirectTo: `${window.location.origin}/reset-password.html`,
+    });
+    playerStatus.textContent = "Check your Williams email for the password reset link.";
+  } catch (error) {
+    playerStatus.textContent = error.message;
+  } finally {
+    forgotPasswordButton.disabled = false;
+  }
+}
+
+async function handlePasswordResetSubmit(event) {
+  event.preventDefault();
+  const hasToken = Boolean(localStorage.getItem(AUTH_TOKEN_KEY));
+
+  if (!hasToken) {
+    const email = resetEmailInput?.value.trim().toLowerCase();
+    if (!email) return;
+    try {
+      setResetPasswordBusy(true);
+      await apiPost("/api/auth/password-reset-request", {
+        email,
+        redirectTo: `${window.location.origin}/reset-password.html`,
+      });
+      resetPasswordStatus.textContent = "Check your Williams email for the password reset link.";
+    } catch (error) {
+      resetPasswordStatus.textContent = error.message;
+    } finally {
+      setResetPasswordBusy(false);
+    }
+    return;
+  }
+
+  try {
+    setResetPasswordBusy(true);
+    const password = newPasswordInput?.value || "";
+    await apiPost("/api/auth/password-update", { password });
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    resetPasswordStatus.textContent = "Password updated. You can log in now.";
+    window.setTimeout(() => {
+      window.location.href = "login.html";
+    }, 1200);
+  } catch (error) {
+    resetPasswordStatus.textContent = error.message;
+  } finally {
+    setResetPasswordBusy(false);
+  }
+}
+
+function showNewPasswordStep(message) {
+  resetEmailInput?.closest("label")?.classList.add("hidden");
+  if (newPasswordInput) {
+    newPasswordInput.required = true;
+    newPasswordInput.closest("label")?.classList.remove("hidden");
+    newPasswordInput.focus();
+  }
+  if (resetPasswordButton) resetPasswordButton.textContent = "Update Password";
+  if (resetPasswordStatus) resetPasswordStatus.textContent = message;
+}
+
+function setResetPasswordBusy(isBusy) {
+  if (!resetPasswordButton) return;
+  resetPasswordButton.disabled = isBusy;
+  resetPasswordButton.textContent = isBusy
+    ? "Working..."
+    : localStorage.getItem(AUTH_TOKEN_KEY)
+      ? "Update Password"
+      : "Send Reset Link";
 }
 
 function showProfileCompletion(player) {
@@ -302,6 +432,10 @@ function isHomePage() {
 
 function isLoginPage() {
   return window.location.pathname.endsWith("/login.html") || window.location.pathname.endsWith("login.html");
+}
+
+function isResetPasswordPage() {
+  return window.location.pathname.endsWith("/reset-password.html") || window.location.pathname.endsWith("reset-password.html");
 }
 
 function getDefaultAuthMode() {

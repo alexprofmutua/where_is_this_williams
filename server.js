@@ -298,6 +298,29 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (req.method === "POST" && url.pathname === "/api/auth/password-reset-request") {
+    const body = await readJson(req);
+    const email = normalizeWilliamsEmail(body.email);
+    const redirectTo = normalizeRedirectUrl(body.redirectTo, req);
+    if (!isSupabaseAuthConfigured()) throw httpError(500, "Supabase auth is not configured yet.");
+
+    await requestPasswordReset(email, redirectTo);
+    sendJson(res, 200, { sent: true });
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/auth/password-update") {
+    const authUser = await authUserFromRequest(req);
+    const body = await readJson(req);
+    const password = normalizePassword(body.password);
+    await updateSupabasePassword(req, password);
+
+    const player = upsertVerifiedPlayer(db, { email: authUser.email });
+    await writeDb(db);
+    sendJson(res, 200, { player: publicPlayer(player) });
+    return;
+  }
+
   if (req.method === "POST" && url.pathname === "/api/auth/session") {
     const body = await readJson(req);
     const accessToken = body.accessToken || await exchangeSupabaseCode(body.code);
@@ -950,6 +973,30 @@ async function passwordSignup(email, password, instagram) {
   }
 }
 
+async function requestPasswordReset(email, redirectTo) {
+  try {
+    await supabaseAuthFetch(`/auth/v1/recover?redirect_to=${encodeURIComponent(redirectTo)}`, {
+      method: "POST",
+      body: { email },
+    });
+  } catch {
+    throw httpError(500, "Could not send password reset email. Try again in a few minutes.");
+  }
+}
+
+async function updateSupabasePassword(req, password) {
+  const accessToken = bearerTokenFromRequest(req);
+  try {
+    await supabaseAuthFetch("/auth/v1/user", {
+      method: "PUT",
+      accessToken,
+      body: { password },
+    });
+  } catch {
+    throw httpError(401, "Password reset link expired. Request a new reset link.");
+  }
+}
+
 async function exchangeSupabaseCode(code) {
   if (!isSupabaseAuthConfigured()) throw httpError(500, "Supabase auth is not configured yet.");
   const authCode = String(code || "").trim();
@@ -970,10 +1017,14 @@ async function exchangeSupabaseCode(code) {
 }
 
 async function authUserFromRequest(req) {
+  return verifySupabaseAccessToken(bearerTokenFromRequest(req));
+}
+
+function bearerTokenFromRequest(req) {
   const header = String(req.headers.authorization || "");
   const match = header.match(/^Bearer\s+(.+)$/i);
   if (!match) throw httpError(401, "Login token required.");
-  return verifySupabaseAccessToken(match[1]);
+  return match[1];
 }
 
 async function requirePlayerAuth(req, unix) {

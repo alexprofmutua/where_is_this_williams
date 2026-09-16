@@ -219,6 +219,31 @@ body.auth-pending .app-shell {
     font-size: 0.95rem;
 }
 
+.forgot-password-link {
+    flex-basis: 100%;
+    width: max-content;
+    margin: 2px auto 0;
+    padding: 0;
+    color: white;
+    background: transparent;
+    border: 0;
+    font-size: 0.9rem;
+    font-weight: 800;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    box-shadow: none;
+}
+
+.forgot-password-link:hover,
+.forgot-password-link:focus-visible {
+    color: var(--gold);
+}
+
+.login-text-link {
+    text-decoration: none;
+    align-items: center;
+}
+
 .login-page .player-card label {
     color: white;
     font-size: 0.82rem;
