@@ -32,6 +32,7 @@ const playerForm = document.querySelector("#player-form");
 const playerFormTitle = document.querySelector("#player-form-title");
 const playerFormHelp = document.querySelector("#player-form-help");
 const emailInput = document.querySelector("#email-input");
+const passwordInput = document.querySelector("#password-input");
 const instagramInput = document.querySelector("#instagram-input");
 const savePlayerButton = document.querySelector("#save-player-button");
 const playerStatus = document.querySelector("#player-status");
@@ -166,14 +167,42 @@ async function savePlayer(event) {
   }
 
   const email = emailInput.value.trim().toLowerCase();
+  const password = passwordInput?.value || "";
+  const instagram = normalizeInstagram(instagramInput?.value || "");
+
+  if (authMode === "signup" && instagramInput?.closest("label")?.classList.contains("hidden")) {
+    instagramInput.required = true;
+    instagramInput.closest("label")?.classList.remove("hidden");
+    instagramInput.focus();
+    playerStatus.textContent = "Choose the Instagram username people will see, then press Sign Up again.";
+    return;
+  }
 
   try {
     setPlayerFormBusy(true);
-    await apiPost("/api/auth/send-link", {
+    const payload = {
       email,
-      redirectTo: `${window.location.origin}${window.location.pathname}`,
-    });
-    playerStatus.textContent = "Check your Williams email to continue.";
+      password,
+      instagram,
+      referredBy: localStorage.getItem(REFERRER_KEY) || "",
+    };
+    const response = authMode === "signup"
+      ? await apiPost("/api/auth/password-signup", payload)
+      : await apiPost("/api/auth/password-login", payload);
+
+    if (response.needsEmailConfirmation) {
+      playerStatus.textContent = response.message || "Check your Williams email once to confirm your new account.";
+      return;
+    }
+
+    if (response.accessToken) localStorage.setItem(AUTH_TOKEN_KEY, response.accessToken);
+    localStorage.setItem(ACTIVE_UNIX_KEY, response.player.unix);
+    activePlayer = response.player;
+    if (response.needsProfile) {
+      showProfileCompletion(response.player);
+      return;
+    }
+    redirectAfterLogin(response.player);
   } catch (error) {
     playerStatus.textContent = error.message;
   } finally {
@@ -232,6 +261,7 @@ function showProfileCompletion(player) {
     emailInput.value = player.email || "";
     emailInput.disabled = true;
   }
+  if (passwordInput) passwordInput.closest("label")?.classList.add("hidden");
   if (instagramInput) {
     instagramInput.required = true;
     instagramInput.closest("label")?.classList.remove("hidden");
@@ -307,6 +337,10 @@ function syncPlayerView(mode = "saved") {
       instagramInput.required = false;
       instagramInput.closest("label")?.classList.add("hidden");
     }
+    if (passwordInput && isLoginPage()) {
+      passwordInput.required = true;
+      passwordInput.closest("label")?.classList.remove("hidden");
+    }
     if (startButton) startButton.disabled = true;
     if (!isLoginPage()) playerStatus.textContent = "You can only play once, and I hope you have fun.";
     return;
@@ -337,17 +371,25 @@ function setAuthMode(mode) {
   }
 
   if (authMode === "login") {
+    if (instagramInput && isLoginPage()) {
+      instagramInput.required = false;
+      instagramInput.closest("label")?.classList.add("hidden");
+    }
     if (playerFormTitle) playerFormTitle.textContent = "Log in";
-    if (playerFormHelp) playerFormHelp.textContent = "Returning player? Enter the same Williams email and exact Instagram username you used before.";
+    if (playerFormHelp) playerFormHelp.textContent = "Log in with your Williams email and password.";
     if (savePlayerButton) savePlayerButton.textContent = "Log In";
-    if (playerStatus) playerStatus.textContent = "Your saved answers, score, history, and stickers will load after login.";
+    if (playerStatus) playerStatus.textContent = "";
     return;
   }
 
+  if (instagramInput && isLoginPage()) {
+    instagramInput.required = false;
+    instagramInput.closest("label")?.classList.add("hidden");
+  }
   if (playerFormTitle) playerFormTitle.textContent = "Join the game";
-  if (playerFormHelp) playerFormHelp.textContent = "First time playing? Use your Williams email and Instagram username to make your profile.";
+  if (playerFormHelp) playerFormHelp.textContent = "Create your account once with Williams email, password, and Instagram.";
   if (savePlayerButton) savePlayerButton.textContent = "Sign Up";
-  if (playerStatus) playerStatus.textContent = "You can only play once, and I hope you have fun.";
+  if (playerStatus) playerStatus.textContent = "";
 }
 
 function setPlayerFormBusy(isBusy) {

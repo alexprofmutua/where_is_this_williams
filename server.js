@@ -248,6 +248,56 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (req.method === "POST" && url.pathname === "/api/auth/password-login") {
+    const body = await readJson(req);
+    const email = normalizeWilliamsEmail(body.email);
+    const password = normalizePassword(body.password);
+    if (!isSupabaseAuthConfigured()) throw httpError(500, "Supabase auth is not configured yet.");
+
+    const session = await passwordLogin(email, password);
+    const authUser = await verifySupabaseAccessToken(session.access_token);
+    const player = upsertVerifiedPlayer(db, {
+      email: authUser.email,
+      referredBy: String(body.referredBy || "").trim().toLowerCase(),
+    });
+    await writeDb(db);
+    sendJson(res, 200, { accessToken: session.access_token, player: publicPlayer(player), needsProfile: !hasDisplayProfile(player) });
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/auth/password-signup") {
+    const body = await readJson(req);
+    const email = normalizeWilliamsEmail(body.email);
+    const password = normalizePassword(body.password);
+    const instagram = normalizeInstagram(body.instagram);
+    const referredBy = String(body.referredBy || "").trim().toLowerCase();
+    if (!instagram) throw httpError(400, "Instagram username is required for sign up.");
+    if (!isSupabaseAuthConfigured()) throw httpError(500, "Supabase auth is not configured yet.");
+    assertInstagramAvailable(db, unixFromEmail(email), instagram);
+
+    const session = await passwordSignup(email, password, instagram);
+    const pendingPlayer = upsertVerifiedPlayer(db, { email, referredBy });
+    db.players[pendingPlayer.unix] = {
+      ...pendingPlayer,
+      instagram,
+      screenName: instagram,
+      realName: instagram,
+      verified: Boolean(session?.access_token),
+    };
+    await writeDb(db);
+
+    if (!session?.access_token) {
+      sendJson(res, 202, {
+        needsEmailConfirmation: true,
+        message: "Check your Williams email once to confirm your new account. After that, log in with your password.",
+      });
+      return;
+    }
+
+    sendJson(res, 200, { accessToken: session.access_token, player: publicPlayer(db.players[pendingPlayer.unix]), needsProfile: false });
+    return;
+  }
+
   if (req.method === "POST" && url.pathname === "/api/auth/session") {
     const body = await readJson(req);
     const accessToken = body.accessToken || await exchangeSupabaseCode(body.code);
@@ -266,11 +316,7 @@ async function handleApi(req, res, url) {
     const body = await readJson(req);
     const instagram = normalizeInstagram(body.instagram);
     if (!instagram) throw httpError(400, "Instagram username is required.");
-
-    const duplicate = Object.values(db.players || {}).find((player) => {
-      return player.unix !== authUser.unix && normalizeUsername(player.instagram || player.screenName).toLowerCase() === instagram.toLowerCase();
-    });
-    if (duplicate) throw httpError(409, "That Instagram username is already connected to another Williams email.");
+    assertInstagramAvailable(db, authUser.unix, instagram);
 
     const player = upsertVerifiedPlayer(db, { email: authUser.email, referredBy: String(body.referredBy || "").trim().toLowerCase() });
     db.players[player.unix] = {
@@ -454,8 +500,12 @@ async function serveStatic(req, res, pathname) {
 
   try {
     const data = await readFile(filePath);
-    const headers = { "Content-Type": mimeTypes[path.extname(filePath)] || "application/octet-stream" };
-    if (path.extname(filePath) === ".html") {
+    const extension = path.extname(filePath);
+    const headers = { "Content-Type": mimeTypes[extension] || "application/octet-stream" };
+    if ([".html", ".js", ".css"].includes(extension)) {
+      headers["Cache-Control"] = "no-store";
+    }
+    if (extension === ".html") {
       const visit = await trackVisit(req, requested);
       if (visit.cookie) headers["Set-Cookie"] = visit.cookie;
     }
@@ -837,6 +887,12 @@ function normalizeWilliamsEmail(value) {
   return email;
 }
 
+function normalizePassword(value) {
+  const password = String(value || "");
+  if (password.length < 8) throw httpError(400, "Use a password with at least 8 characters.");
+  return password;
+}
+
 function unixFromEmail(email) {
   return normalizeWilliamsEmail(email).split("@")[0];
 }
@@ -866,6 +922,32 @@ async function verifySupabaseAccessToken(accessToken) {
 
   const email = normalizeWilliamsEmail(user?.email);
   return { email, unix: unixFromEmail(email), id: user.id };
+}
+
+async function passwordLogin(email, password) {
+  try {
+    return await supabaseAuthFetch("/auth/v1/token?grant_type=password", {
+      method: "POST",
+      body: { email, password },
+    });
+  } catch {
+    throw httpError(401, "Email or password is incorrect, or your email has not been confirmed yet.");
+  }
+}
+
+async function passwordSignup(email, password, instagram) {
+  try {
+    return await supabaseAuthFetch("/auth/v1/signup", {
+      method: "POST",
+      body: {
+        email,
+        password,
+        data: { instagram },
+      },
+    });
+  } catch {
+    throw httpError(409, "This email may already be signed up. Try logging in instead.");
+  }
 }
 
 async function exchangeSupabaseCode(code) {
@@ -924,6 +1006,14 @@ function upsertVerifiedPlayer(db, { email, referredBy = "" }) {
 
 function hasDisplayProfile(player) {
   return Boolean(normalizeInstagram(player?.instagram || player?.screenName));
+}
+
+function assertInstagramAvailable(db, unix, instagram) {
+  const normalizedInstagram = normalizeUsername(instagram).toLowerCase();
+  const duplicate = Object.values(db.players || {}).find((player) => {
+    return player.unix !== unix && normalizeUsername(player.instagram || player.screenName).toLowerCase() === normalizedInstagram;
+  });
+  if (duplicate) throw httpError(409, "That Instagram username is already connected to another Williams email.");
 }
 
 function publicPlayer(player) {
