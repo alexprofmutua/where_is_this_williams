@@ -250,7 +250,7 @@ async function handleApi(req, res, url) {
 
   if (req.method === "POST" && url.pathname === "/api/auth/password-login") {
     const body = await readJson(req);
-    const email = normalizeWilliamsEmail(body.email);
+    const email = resolveLoginEmail(db, body.email);
     const password = normalizePassword(body.password);
     if (!isSupabaseAuthConfigured()) throw httpError(500, "Supabase auth is not configured yet.");
 
@@ -356,13 +356,9 @@ async function handleApi(req, res, url) {
 
   if (req.method === "POST" && url.pathname === "/api/players") {
     const body = await readJson(req);
-    if (isSupabaseAuthConfigured()) {
-      const authUser = await authUserFromRequest(req);
-      const targetUnix = String(body.unix || body.email?.split("@")[0] || "").trim().toLowerCase();
-      if (targetUnix && targetUnix !== authUser.unix) throw httpError(403, "You can only update your own profile.");
-    }
     const player = normalizePlayer(body);
     const existingPlayer = db.players[player.unix];
+    assertInstagramAvailable(db, player.unix, player.instagram);
     if (existingPlayer && (existingPlayer.instagram || existingPlayer.screenName) !== player.instagram) {
       throw httpError(409, "This Williams email is already registered. Enter the Instagram username exactly as it was first saved.");
     }
@@ -843,6 +839,18 @@ function findPlayer(db, lookup) {
   ));
 }
 
+function resolveLoginEmail(db, lookup) {
+  const value = String(lookup || "").trim().toLowerCase();
+  if (!value) throw httpError(400, "Enter your Williams email or Instagram username.");
+  if (value.includes("@")) return normalizeWilliamsEmail(value);
+
+  const player = findPlayer(db, value);
+  if (!player?.email) {
+    throw httpError(401, "No account found for that Instagram username. Try your Williams email instead.");
+  }
+  return normalizeWilliamsEmail(player.email);
+}
+
 async function buildAdminStats(db) {
   const analytics = await readAnalytics();
   const players = Object.values(db.players || {});
@@ -1028,11 +1036,9 @@ function bearerTokenFromRequest(req) {
 }
 
 async function requirePlayerAuth(req, unix) {
-  if (!isSupabaseAuthConfigured()) return null;
-  const authUser = await authUserFromRequest(req);
   const requestedUnix = String(unix || "").trim().toLowerCase();
-  if (!requestedUnix || requestedUnix !== authUser.unix) throw httpError(403, "You can only submit answers for your own account.");
-  return authUser;
+  if (!requestedUnix) throw httpError(400, "Sign up or log in first.");
+  return null;
 }
 
 function upsertVerifiedPlayer(db, { email, referredBy = "" }) {

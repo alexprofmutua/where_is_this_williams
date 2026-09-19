@@ -16,7 +16,6 @@ let eventWindowTimerId = null;
 let music = null;
 let questionEndsAt = null;
 let authMode = "signup";
-let authSubmitButton = null;
 let profileCompletionMode = false;
 
 const introScreen = document.querySelector("#intro-screen");
@@ -31,6 +30,7 @@ const aboutPanel = document.querySelector("#about");
 const playerForm = document.querySelector("#player-form");
 const playerFormTitle = document.querySelector("#player-form-title");
 const playerFormHelp = document.querySelector("#player-form-help");
+const emailLabel = document.querySelector("#email-label");
 const emailInput = document.querySelector("#email-input");
 const passwordInput = document.querySelector("#password-input");
 const instagramInput = document.querySelector("#instagram-input");
@@ -122,8 +122,7 @@ function bindEvents() {
   resetPasswordForm?.addEventListener("submit", handlePasswordResetSubmit);
   document.querySelectorAll("[data-submit-mode]").forEach((button) => {
     button.addEventListener("click", () => {
-      authMode = button.dataset.submitMode === "login" ? "login" : "signup";
-      authSubmitButton = button;
+      setAuthMode(button.dataset.submitMode);
     });
   });
   document.querySelectorAll("[data-auth-mode]").forEach((button) => {
@@ -180,41 +179,18 @@ async function savePlayer(event) {
   }
 
   const email = emailInput.value.trim().toLowerCase();
-  const password = passwordInput?.value || "";
   const instagram = normalizeInstagram(instagramInput?.value || "");
-
-  if (authMode === "signup" && instagramInput?.closest("label")?.classList.contains("hidden")) {
-    instagramInput.required = true;
-    instagramInput.closest("label")?.classList.remove("hidden");
-    instagramInput.focus();
-    playerStatus.textContent = "Choose the Instagram username people will see, then press Sign Up again.";
-    return;
-  }
 
   try {
     setPlayerFormBusy(true);
     const payload = {
       email,
-      password,
       instagram,
       referredBy: localStorage.getItem(REFERRER_KEY) || "",
     };
-    const response = authMode === "signup"
-      ? await apiPost("/api/auth/password-signup", payload)
-      : await apiPost("/api/auth/password-login", payload);
-
-    if (response.needsEmailConfirmation) {
-      playerStatus.textContent = response.message || "Check your Williams email once to confirm your new account.";
-      return;
-    }
-
-    if (response.accessToken) localStorage.setItem(AUTH_TOKEN_KEY, response.accessToken);
+    const response = await apiPost("/api/players", payload);
     localStorage.setItem(ACTIVE_UNIX_KEY, response.player.unix);
     activePlayer = response.player;
-    if (response.needsProfile) {
-      showProfileCompletion(response.player);
-      return;
-    }
     redirectAfterLogin(response.player);
   } catch (error) {
     playerStatus.textContent = error.message;
@@ -397,9 +373,8 @@ function showProfileCompletion(player) {
     instagramInput.closest("label")?.classList.remove("hidden");
     instagramInput.focus();
   }
-  document.querySelectorAll("[data-submit-mode]").forEach((button) => {
-    button.classList.toggle("hidden", button !== savePlayerButton);
-  });
+  document.querySelector(".auth-tabs")?.classList.add("hidden");
+  forgotPasswordButton?.classList.add("hidden");
   if (savePlayerButton) savePlayerButton.textContent = "Save Instagram";
   if (playerStatus) playerStatus.textContent = "Add the Instagram username people will see on the leaderboard.";
 }
@@ -440,7 +415,7 @@ function isResetPasswordPage() {
 
 function getDefaultAuthMode() {
   if (!isLoginPage()) return "signup";
-  return new URLSearchParams(window.location.search).get("mode") === "signup" ? "signup" : "login";
+  return new URLSearchParams(window.location.search).get("mode") === "login" ? "login" : "signup";
 }
 
 function redirectToLogin() {
@@ -467,10 +442,6 @@ function syncPlayerView(mode = "saved") {
     playerForm.classList.remove("hidden");
     profileCard?.classList.add("hidden");
     setAuthMode(authMode);
-    if (instagramInput && isLoginPage()) {
-      instagramInput.required = false;
-      instagramInput.closest("label")?.classList.add("hidden");
-    }
     if (passwordInput && isLoginPage()) {
       passwordInput.required = true;
       passwordInput.closest("label")?.classList.remove("hidden");
@@ -492,37 +463,31 @@ function syncPlayerView(mode = "saved") {
 
 function setAuthMode(mode) {
   authMode = mode === "login" ? "login" : "signup";
+  document.querySelectorAll("[data-submit-mode]").forEach((button) => {
+    const isActive = button.dataset.submitMode === authMode;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
+  });
   document.querySelectorAll("[data-auth-mode]").forEach((button) => {
     const isActive = button.dataset.authMode === authMode;
     button.classList.toggle("active", isActive);
     button.setAttribute("aria-selected", String(isActive));
   });
 
-  if (isLoginPage() && !document.querySelector("[data-auth-mode]")) {
-    if (playerStatus) playerStatus.textContent = "";
-    if (savePlayerButton) savePlayerButton.textContent = "Continue";
-    return;
+  if (emailLabel) emailLabel.textContent = "Williams email";
+  if (emailInput) {
+    emailInput.type = "text";
+    emailInput.placeholder = "abc1@williams.edu";
+    emailInput.autocomplete = "email";
   }
-
-  if (authMode === "login") {
-    if (instagramInput && isLoginPage()) {
-      instagramInput.required = false;
-      instagramInput.closest("label")?.classList.add("hidden");
-    }
-    if (playerFormTitle) playerFormTitle.textContent = "Log in";
-    if (playerFormHelp) playerFormHelp.textContent = "Log in with your Williams email and password.";
-    if (savePlayerButton) savePlayerButton.textContent = "Log In";
-    if (playerStatus) playerStatus.textContent = "";
-    return;
-  }
-
   if (instagramInput && isLoginPage()) {
-    instagramInput.required = false;
-    instagramInput.closest("label")?.classList.add("hidden");
+    instagramInput.required = true;
+    instagramInput.closest("label")?.classList.remove("hidden");
   }
-  if (playerFormTitle) playerFormTitle.textContent = "Join the game";
-  if (playerFormHelp) playerFormHelp.textContent = "Create your account once with Williams email, password, and Instagram.";
-  if (savePlayerButton) savePlayerButton.textContent = "Sign Up";
+  forgotPasswordButton?.classList.add("hidden");
+  if (playerFormTitle) playerFormTitle.textContent = "Enter";
+  if (playerFormHelp) playerFormHelp.textContent = "Use your Williams email and Instagram username.";
+  if (savePlayerButton) savePlayerButton.textContent = "Enter";
   if (playerStatus) playerStatus.textContent = "";
 }
 
@@ -531,12 +496,8 @@ function setPlayerFormBusy(isBusy) {
   document.querySelectorAll("[data-submit-mode]").forEach((button) => {
     button.disabled = isBusy;
   });
-  if (isLoginPage()) {
-    const activeButton = authSubmitButton || savePlayerButton;
-    activeButton.textContent = isBusy ? "Checking..." : profileCompletionMode ? "Save Instagram" : "Continue";
-    return;
-  }
-  savePlayerButton.textContent = isBusy ? "Checking..." : authMode === "login" ? "Log In" : "Sign Up";
+  const idleText = profileCompletionMode ? "Save Instagram" : "Enter";
+  savePlayerButton.textContent = isBusy ? "Checking..." : idleText;
 }
 
 function hasDisplayProfile(player) {
@@ -791,12 +752,20 @@ async function renderHistory() {
 
 async function renderPosts() {
   if (!postsGrid) return;
-  const savedSubmission = localStorage.getItem("where-is-this-williams-post-submissions");
-  if (savedSubmission) {
-    showPostsSubmittedMessage();
-    return;
-  }
   const questions = appData.questions;
+  const savedSubmission = activePlayer
+    ? localStorage.getItem(`where-is-this-williams-post-submissions-${activePlayer.unix}`)
+    : null;
+  if (activePlayer) {
+    const history = await getActiveHistory();
+    const votedQuestionIds = new Set(history.map((vote) => vote.questionId));
+    const alreadySubmitted = questions.length > 0 && questions.every((question) => votedQuestionIds.has(question.id));
+    if (savedSubmission || alreadySubmitted) {
+      showPostsSubmittedMessage();
+      return;
+    }
+  }
+
   postsGrid.innerHTML = questions.length
     ? questions.map((question, index) => `
         <article class="post-card" data-post-id="${escapeHtml(question.id)}">
@@ -852,7 +821,7 @@ async function submitPostSelections() {
       unix: activePlayer.unix,
       selections,
     });
-    localStorage.setItem("where-is-this-williams-post-submissions", JSON.stringify({
+    localStorage.setItem(`where-is-this-williams-post-submissions-${activePlayer.unix}`, JSON.stringify({
       selections,
       savedAt: new Date().toISOString(),
     }));
@@ -865,7 +834,7 @@ async function submitPostSelections() {
 
 function showPostsSubmittedMessage() {
   if (!postsGrid) return;
-  postsGrid.innerHTML = `<section class="posts-submitted-message"><strong>Submitted.</strong><span>Thank you for participating.</span></section>`;
+  postsGrid.innerHTML = `<section class="posts-submitted-message"><strong>Great.</strong><span>Check the leaderboard to see the updated score.</span></section>`;
   if (postsSubmitButton) postsSubmitButton.classList.add("hidden");
   postsSubmitStatus.textContent = "";
 }

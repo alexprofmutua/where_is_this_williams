@@ -12,22 +12,16 @@
             <img class="login-logo" src="assests/photos/potential-logo.png" alt="Where Is This Williams College" />
             <form class="player-card login-form" id="player-form">
                 <label>
-                    Williams email
-                    <input id="email-input" name="email" type="email" autocomplete="email" placeholder="abc1@williams.edu" required />
+                    <span id="email-label">Williams email</span>
+                    <input id="email-input" name="email" type="text" inputmode="email" autocomplete="email" placeholder="abc1@williams.edu" required />
                 </label>
                 <label>
-                    Password
-                    <input id="password-input" name="password" type="password" autocomplete="current-password" placeholder="Password" required minlength="8" />
-                </label>
-                <label class="hidden">
                     Instagram username
                     <input id="instagram-input" name="instagram" type="text" autocomplete="username" placeholder="@ephs_everywhere" />
                 </label>
                 <div class="login-actions">
-                    <button class="primary-button login-submit" id="save-player-button" type="submit" data-submit-mode="login">Log In</button>
-                    <button class="secondary-button login-submit" type="submit" data-submit-mode="signup">Sign Up</button>
+                    <button class="primary-button login-submit" id="save-player-button" type="submit">Enter</button>
                 </div>
-                <button class="forgot-password-link" id="forgot-password-button" type="button">Forgot password?</button>
             </form>
             <p class="player-status" id="player-status"></p>
         </section>

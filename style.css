@@ -195,34 +195,32 @@ body.auth-pending .app-shell {
 }
 
 .login-form {
-    width: auto;
-    display: flex;
-    align-items: end;
+    width: min(360px, 88vw);
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: stretch;
     justify-content: center;
-    flex-wrap: wrap;
-    gap: 12px 18px;
+    gap: 11px;
 }
 
 .login-actions {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    flex-wrap: wrap;
+    width: 100%;
+    display: block;
 }
 
 .login-submit {
-    min-height: 42px;
-    width: auto;
-    padding: 0 18px;
-    border-radius: 8px;
+    min-height: 38px;
+    width: 100%;
+    padding: 0 16px;
+    border-radius: 7px;
     justify-content: center;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
 }
 
 .forgot-password-link {
-    flex-basis: 100%;
+    justify-self: center;
     width: max-content;
-    margin: 2px auto 0;
+    margin: 0 auto;
     padding: 0;
     color: white;
     background: transparent;
@@ -251,11 +249,11 @@ body.auth-pending .app-shell {
 }
 
 .login-page .player-card input {
-    min-height: 46px;
+    min-height: 40px;
     color: var(--ink);
     background: white;
     border-color: rgba(255, 255, 255, 0.76);
-    box-shadow: 0 10px 24px rgba(22, 10, 44, 0.18);
+    box-shadow: 0 6px 14px rgba(22, 10, 44, 0.14);
 }
 
 .login-page .player-card input::placeholder {
@@ -291,8 +289,12 @@ body.auth-pending .app-shell {
 }
 
 .login-page .player-status {
+    width: min(360px, 88vw);
+    margin: 14px auto 0;
     color: white;
     font-weight: 800;
+    line-height: 1.35;
+    text-align: center;
 }
 
 .login-page .player-status:empty {
@@ -797,32 +799,32 @@ body.auth-pending .app-shell {
 }
 
 .auth-tabs {
-    width: fit-content;
-    display: inline-grid;
-    grid-template-columns: repeat(2, minmax(88px, 1fr));
-    gap: 4px;
-    padding: 4px;
-    background: #eee7d9;
-    border: 1px solid var(--border);
-    border-radius: 8px;
+    width: max-content;
+    max-width: 100%;
+    justify-self: center;
+    display: flex;
+    gap: 8px;
 }
 
 .auth-tab {
-    min-height: 38px;
-    padding: 0 14px;
-    color: var(--muted);
+    min-height: 32px;
+    padding: 0 13px;
+    color: white;
     background: transparent;
-    border: 0;
-    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 999px;
     font: inherit;
     font-weight: 900;
+    font-size: 0.82rem;
     cursor: pointer;
+    box-shadow: none;
 }
 
 .auth-tab.active {
-    color: white;
-    background: var(--purple);
-    box-shadow: 0 4px 10px rgba(75, 36, 128, 0.22);
+    color: var(--purple);
+    background: var(--gold);
+    border-color: var(--gold);
+    box-shadow: none;
 }
 
 .player-form-copy h2 {
@@ -1935,7 +1937,7 @@ h2 {
 }
 
 .hidden {
-    display: none;
+    display: none !important;
 }
 
 @media (max-width: 650px) {
