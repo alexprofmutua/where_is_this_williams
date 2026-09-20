@@ -997,18 +997,37 @@ function setReferralShareStatus(message) {
 
 async function renderPodium() {
   if (!championGallery) return;
-  const { terms } = await apiGet("/api/podium");
-  if (!terms.length) {
-    championGallery.innerHTML = "";
+  const { leaders } = await apiGet("/api/leaderboard");
+  const champions = leaders.slice(0, 3).map((leader, index) => ({
+    ...leader,
+    podiumPlace: index + 1,
+  }));
+
+  if (!champions.length) {
+    championGallery.innerHTML = `<section class="empty-podium"><strong>No champions yet.</strong><p>The podium will appear after players submit scores.</p></section>`;
     return;
   }
 
-  championGallery.innerHTML = terms
-    .map((term) => {
-      const winners = [...term.winners].sort((a, b) => ({ 2: 1, 1: 2, 3: 3 })[a.place] - ({ 2: 1, 1: 2, 3: 3 })[b.place]);
-      return `<section class="term-podium"><h2>${term.term}</h2><div class="winner-grid olympic-podium">${winners.map((winner) => `<article class="winner-card place-${winner.place}"><img src="${winner.image}" alt="${winner.screenName}" /><div><span>${winner.place}</span><strong>${winner.screenName}</strong><em>${winner.points} pts</em></div></article>`).join("")}</div></section>`;
-    })
-    .join("");
+  const orderedChampions = [...champions].sort(
+    (a, b) => ({ 2: 1, 1: 2, 3: 3 })[a.podiumPlace] - ({ 2: 1, 1: 2, 3: 3 })[b.podiumPlace]
+  );
+
+  championGallery.innerHTML = `
+    <section class="term-podium">
+      <div class="winner-grid olympic-podium">
+        ${orderedChampions.map((winner) => `
+          <article class="winner-card place-${winner.podiumPlace}">
+            <div class="winner-medal" aria-hidden="true">${winner.podiumPlace === 1 ? "🏆" : winner.podiumPlace === 2 ? "🥈" : "🥉"}</div>
+            <div>
+              <span>${winner.podiumPlace}</span>
+              <strong>@${escapeHtml(winner.screenName)}</strong>
+              <em>${escapeHtml(winner.points)} pts</em>
+            </div>
+          </article>
+        `).join("")}
+      </div>
+    </section>
+  `;
 }
 
 function historyText(vote) {
