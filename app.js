@@ -13,6 +13,8 @@ let currentQuestionIndex = 0;
 let timerId = null;
 let autoAdvanceTimerId = null;
 let eventWindowTimerId = null;
+let postBatchTimerId = null;
+let postBatchEndsAt = null;
 let music = null;
 let questionEndsAt = null;
 let authMode = "signup";
@@ -65,6 +67,7 @@ const leaderboardList = document.querySelector("#leaderboard-list");
 const postsGrid = document.querySelector("#posts-grid");
 const postsSubmitButton = document.querySelector("#posts-submit-button");
 const postsSubmitStatus = document.querySelector("#posts-submit-status");
+const postsBatchTimer = document.querySelector("#posts-batch-timer");
 const championGallery = document.querySelector("#champion-gallery");
 const achievementList = document.querySelector("#achievement-list");
 const achievementCount = document.querySelector("#achievement-count");
@@ -753,8 +756,10 @@ async function renderHistory() {
 async function renderPosts() {
   if (!postsGrid) return;
   const questions = appData.questions;
+  postsSubmitButton?.classList.toggle("hidden", !questions.length);
+  postsSubmitStatus.textContent = "";
   const savedSubmission = activePlayer
-    ? localStorage.getItem(`where-is-this-williams-post-submissions-${activePlayer.unix}`)
+    ? localStorage.getItem(getPostSubmissionStorageKey())
     : null;
   if (activePlayer) {
     const history = await getActiveHistory();
@@ -789,6 +794,7 @@ async function renderPosts() {
         </article>
       `).join("")
     : `<p class="page-copy">No posts yet.</p>`;
+  if (questions.length) startPostBatchTimer();
 }
 
 function selectPostOption(event) {
@@ -801,9 +807,20 @@ function selectPostOption(event) {
   });
 }
 
-async function submitPostSelections() {
+async function submitPostSelections(options = {}) {
   if (!postsGrid || !postsSubmitStatus) return;
   const cards = [...postsGrid.querySelectorAll(".post-card")];
+  const missingCard = cards.find((card) => {
+    const hasOptions = Boolean(card.querySelector("[data-post-option]"));
+    return hasOptions && !card.querySelector("[data-post-option].selected");
+  });
+  if (missingCard) {
+    postsSubmitStatus.textContent = options.fromTimer
+      ? "Time is up. Choose any missing answer, then press Submit."
+      : "Choose one option for each photo before submitting.";
+    return;
+  }
+
   const selections = cards.map((card) => {
     const selected = card.querySelector("[data-post-option].selected");
     return {
@@ -821,10 +838,11 @@ async function submitPostSelections() {
       unix: activePlayer.unix,
       selections,
     });
-    localStorage.setItem(`where-is-this-williams-post-submissions-${activePlayer.unix}`, JSON.stringify({
+    localStorage.setItem(getPostSubmissionStorageKey(), JSON.stringify({
       selections,
       savedAt: new Date().toISOString(),
     }));
+    stopPostBatchTimer();
     showPostsSubmittedMessage();
   } catch (error) {
     if (postsSubmitButton) postsSubmitButton.disabled = false;
@@ -834,9 +852,52 @@ async function submitPostSelections() {
 
 function showPostsSubmittedMessage() {
   if (!postsGrid) return;
+  stopPostBatchTimer();
   postsGrid.innerHTML = `<section class="posts-submitted-message"><strong>Great.</strong><span>Check the leaderboard to see the updated score.</span></section>`;
   if (postsSubmitButton) postsSubmitButton.classList.add("hidden");
   postsSubmitStatus.textContent = "";
+}
+
+function startPostBatchTimer() {
+  if (!postsBatchTimer) return;
+  stopPostBatchTimer();
+  const seconds = Number(appData.settings.postsBatchSeconds || 30);
+  postBatchEndsAt = Date.now() + seconds * 1000;
+  updatePostBatchTimer();
+  postBatchTimerId = window.setInterval(updatePostBatchTimer, 250);
+}
+
+function stopPostBatchTimer() {
+  if (postBatchTimerId) window.clearInterval(postBatchTimerId);
+  postBatchTimerId = null;
+  postBatchEndsAt = null;
+  if (postsBatchTimer) postsBatchTimer.textContent = "";
+}
+
+function updatePostBatchTimer() {
+  if (!postsBatchTimer || !postBatchEndsAt) return;
+  const remaining = postBatchEndsAt - Date.now();
+  if (remaining <= 0) {
+    window.clearInterval(postBatchTimerId);
+    postBatchTimerId = null;
+    postsBatchTimer.textContent = "Time";
+    closePostsForExpiredTimer();
+    return;
+  }
+  postsBatchTimer.textContent = `${Math.ceil(remaining / 1000)}s for both photos`;
+}
+
+function closePostsForExpiredTimer() {
+  if (!postsGrid) return;
+  postsGrid.innerHTML = `<section class="posts-submitted-message"><strong>Time is up.</strong><span>This weekend's voting window has closed.</span></section>`;
+  postsSubmitButton?.classList.add("hidden");
+  postsSubmitStatus.textContent = "";
+}
+
+function getPostSubmissionStorageKey() {
+  const questionIds = appData.questions.map((question) => question.id).join(".");
+  const seasonId = appData.settings.currentSeasonId || "current-season";
+  return `where-is-this-williams-post-submissions-${activePlayer.unix}-${seasonId}-${questionIds}`;
 }
 
 async function renderAchievements(target, options = {}) {
@@ -997,29 +1058,57 @@ function setReferralShareStatus(message) {
 
 async function renderPodium() {
   if (!championGallery) return;
-  const { leaders } = await apiGet("/api/leaderboard");
-  const champions = leaders.slice(0, 3).map((leader, index) => ({
+  const [{ terms }, { leaders }] = await Promise.all([
+    apiGet("/api/podium"),
+    apiGet("/api/leaderboard"),
+  ]);
+  const currentChampions = leaders.slice(0, 3).map((leader, index) => ({
     ...leader,
     podiumPlace: index + 1,
   }));
 
-  if (!champions.length) {
+  if (!terms.length && !currentChampions.length) {
     championGallery.innerHTML = `<section class="empty-podium"><strong>No champions yet.</strong><p>The podium will appear after players submit scores.</p></section>`;
     return;
   }
 
-  const orderedChampions = [...champions].sort(
-    (a, b) => ({ 2: 1, 1: 2, 3: 3 })[a.podiumPlace] - ({ 2: 1, 1: 2, 3: 3 })[b.podiumPlace]
+  const currentPodium = renderPodiumTerm("Fall 2026 Weekend Series", currentChampions);
+  const savedPodiums = terms.map((term) => renderPodiumTerm(formatPodiumTermName(term.term), term.winners || [])).join("");
+
+  championGallery.innerHTML = `${currentPodium}${savedPodiums}`;
+}
+
+function formatPodiumTermName(termName) {
+  if (String(termName || "").includes("Launch Tournament")) return "Spring 2026 Tournament";
+  return termName;
+}
+
+function renderPodiumTerm(termName, winners) {
+  if (!winners.length) {
+    return `
+      <section class="term-podium">
+        <h2>${escapeHtml(termName)}</h2>
+        <div class="empty-podium"><strong>No champions yet.</strong><p>This podium will update after this season gets scores.</p></div>
+      </section>
+    `;
+  }
+
+  const orderedChampions = [...winners].sort(
+    (a, b) => {
+      const placeOrder = { 2: 1, 1: 2, 3: 3 };
+      return placeOrder[a.podiumPlace || a.place] - placeOrder[b.podiumPlace || b.place];
+    }
   );
 
-  championGallery.innerHTML = `
+  return `
     <section class="term-podium">
+      <h2>${escapeHtml(termName)}</h2>
       <div class="winner-grid olympic-podium">
         ${orderedChampions.map((winner) => `
-          <article class="winner-card place-${winner.podiumPlace}">
-            <div class="winner-medal" aria-hidden="true">${winner.podiumPlace === 1 ? "🏆" : winner.podiumPlace === 2 ? "🥈" : "🥉"}</div>
+          <article class="winner-card place-${winner.podiumPlace || winner.place}">
+            <div class="winner-medal" aria-hidden="true">${(winner.podiumPlace || winner.place) === 1 ? "🏆" : (winner.podiumPlace || winner.place) === 2 ? "🥈" : "🥉"}</div>
             <div>
-              <span>${winner.podiumPlace}</span>
+              <span>${winner.podiumPlace || winner.place}</span>
               <strong>@${escapeHtml(winner.screenName)}</strong>
               <em>${escapeHtml(winner.points)} pts</em>
             </div>

@@ -381,6 +381,24 @@ body.auth-pending .app-shell {
     margin-top: 24px;
 }
 
+.posts-batch-timer {
+    width: max-content;
+    min-height: 40px;
+    display: grid;
+    place-items: center;
+    margin-top: 16px;
+    padding: 8px 14px;
+    color: var(--purple);
+    background: var(--gold);
+    border-radius: 999px;
+    font-weight: 950;
+    line-height: 1;
+}
+
+.posts-batch-timer:empty {
+    display: none;
+}
+
 .post-card {
     display: grid;
     gap: 12px;
@@ -1567,7 +1585,7 @@ h2 {
 
 .champion-gallery {
     display: grid;
-    gap: 18px;
+    gap: 36px;
     margin-top: 20px;
 }
 
@@ -1592,16 +1610,17 @@ h2 {
 }
 
 .term-podium h2 {
-    margin-bottom: 12px;
-    color: var(--purple);
-    font-size: clamp(1.5rem, 3vw, 2rem);
+    margin-bottom: 14px;
+    color: white;
+    font-size: clamp(1.15rem, 2.2vw, 1.6rem);
 }
 
 .winner-grid {
     display: grid;
+    max-width: 760px;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     align-items: end;
-    gap: 18px;
+    gap: 14px;
 }
 
 .winner-card {
@@ -1619,40 +1638,40 @@ h2 {
 }
 
 .olympic-podium .place-1 {
-    min-height: 500px;
+    min-height: 260px;
     order: 2;
 }
 
 .olympic-podium .place-2 {
-    min-height: 420px;
+    min-height: 220px;
     order: 1;
 }
 
 .olympic-podium .place-3 {
-    min-height: 350px;
+    min-height: 190px;
     order: 3;
 }
 
 .olympic-podium .winner-card::after {
     display: grid;
     place-items: center;
-    min-height: 96px;
+    min-height: 48px;
     color: white;
     background: var(--purple);
-    font-size: 2.6rem;
+    font-size: 1.35rem;
     font-weight: 900;
 }
 
 .olympic-podium .place-1::after {
-    min-height: 180px;
+    min-height: 86px;
 }
 
 .olympic-podium .place-2::after {
-    min-height: 128px;
+    min-height: 64px;
 }
 
 .olympic-podium .place-3::after {
-    min-height: 88px;
+    min-height: 48px;
 }
 
 .olympic-podium .place-1::after {
@@ -1678,8 +1697,8 @@ h2 {
 .winner-medal {
     display: grid;
     place-items: center;
-    min-height: 190px;
-    font-size: clamp(4rem, 8vw, 7rem);
+    min-height: 92px;
+    font-size: clamp(2.3rem, 5vw, 3.6rem);
     background:
         radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.26), transparent 34%),
         rgba(255, 255, 255, 0.08);
@@ -1688,12 +1707,12 @@ h2 {
 .winner-card div {
     display: grid;
     gap: 4px;
-    padding: 12px;
+    padding: 10px;
 }
 
 .winner-card span {
-    width: 32px;
-    height: 32px;
+    width: 26px;
+    height: 26px;
     display: grid;
     place-items: center;
     color: var(--purple);
@@ -1704,6 +1723,7 @@ h2 {
 
 .winner-card strong {
     color: white;
+    font-size: 0.95rem;
     line-height: 1.18;
     overflow-wrap: anywhere;
 }
@@ -1712,6 +1732,7 @@ h2 {
     color: var(--gold);
     font-style: normal;
     font-weight: 900;
+    font-size: 0.85rem;
     line-height: 1.2;
     overflow-wrap: anywhere;
 }

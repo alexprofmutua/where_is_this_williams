@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dbPath = path.join(__dirname, "data", "db.json");
+const seasonQuestionsPath = path.join(__dirname, "data", "season-questions.json");
 const analyticsPath = path.join(__dirname, "data", "analytics.json");
 const rankingCsvPath = path.join(__dirname, "assests", "spring26-ranking.csv");
 const port = Number(process.env.PORT || 3000);
@@ -14,6 +15,10 @@ const adminToken = process.env.ADMIN_TOKEN || "change-me";
 const supabaseUrl = (process.env.SUPABASE_URL || "").replace(/\/$/, "");
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || "";
+const currentSeasonId = "fall-2026-weekend-series";
+const currentSeasonName = "Fall 2026 Weekend Series";
+const currentSeasonTimerSeconds = 15;
+const currentSeasonPostBatchSeconds = 30;
 
 const mimeTypes = {
   ".avif": "image/avif",
@@ -73,6 +78,7 @@ async function ensureDb() {
 
 async function readDb() {
   const db = JSON.parse(await readFile(dbPath, "utf8"));
+  await mergeSeasonQuestions(db);
   if (isSupabaseConfigured()) await hydrateDbFromSupabase(db);
   return db;
 }
@@ -85,6 +91,16 @@ async function writeDb(db) {
 async function readAnalytics() {
   if (!existsSync(analyticsPath)) return emptyAnalytics();
   return ensureAnalytics(JSON.parse(await readFile(analyticsPath, "utf8")));
+}
+
+async function mergeSeasonQuestions(db) {
+  if (!existsSync(seasonQuestionsPath)) return;
+  const seasonQuestions = JSON.parse(await readFile(seasonQuestionsPath, "utf8"));
+  const seasonQuestionIds = new Set(seasonQuestions.map((question) => question.id));
+  db.questions = [
+    ...(db.questions || []).filter((question) => !seasonQuestionIds.has(question.id)),
+    ...seasonQuestions,
+  ];
 }
 
 async function writeAnalytics(analytics) {
@@ -222,8 +238,8 @@ async function handleApi(req, res, url) {
 
   if (req.method === "GET" && url.pathname === "/api/bootstrap") {
     sendJson(res, 200, {
-      settings: db.settings,
-      questions: db.questions.map(publicQuestion),
+      settings: publicSettings(db),
+      questions: activePostQuestions(db).map(publicQuestion),
     });
     return;
   }
@@ -414,7 +430,9 @@ async function handleApi(req, res, url) {
   if (req.method === "GET" && url.pathname.startsWith("/api/history/")) {
     const unix = decodeURIComponent(url.pathname.split("/").at(-1)).toLowerCase();
     sendJson(res, 200, {
-      votes: db.votes.filter((vote) => vote.unix === unix).map((vote) => publicVote(db, vote)),
+      votes: db.votes
+        .filter((vote) => vote.unix === unix && isCurrentSeasonVote(db, vote))
+        .map((vote) => publicVote(db, vote)),
     });
     return;
   }
@@ -431,7 +449,7 @@ async function handleApi(req, res, url) {
   }
 
   if (req.method === "GET" && url.pathname === "/api/podium") {
-    sendJson(res, 200, { terms: (db.termWinners || []).filter((term) => term.finalized) });
+    sendJson(res, 200, { terms: db.termWinners || [] });
     return;
   }
 
@@ -570,6 +588,7 @@ function createVote(db, body) {
   if (!db.players[unix]) throw httpError(400, "Sign up or log in first.");
   if (!db.players[unix].verified) throw httpError(403, "Verify your Williams email before voting.");
   if (!question) throw httpError(404, "Question not found.");
+  if (!isCurrentSeasonQuestion(question)) throw httpError(400, "This photo belongs to a past tournament.");
   if (!isPosted(question)) throw httpError(400, "Voting has not opened for this photo yet.");
   if (isDeadlineOver(question)) throw httpError(400, "Voting is closed for this photo.");
   if (!question.options.includes(choice)) throw httpError(400, "Invalid choice.");
@@ -604,6 +623,9 @@ function createPostSubmissionVotes(db, body) {
     const feedbackText = String(selection.comment || selection.feedbackText || "").trim().slice(0, 800);
 
     if (!question) throw httpError(404, "Question not found.");
+    if (!isCurrentSeasonQuestion(question)) throw httpError(400, `${question.title} belongs to a past tournament.`);
+    if (!isPosted(question)) throw httpError(400, `Voting has not opened for ${question.title} yet.`);
+    if (isDeadlineOver(question)) throw httpError(400, `Voting is closed for ${question.title}.`);
     if (!isFeedback && !question.options.includes(choice)) throw httpError(400, `Choose an option for ${question.title}.`);
     if (db.votes.some((vote) => vote.unix === unix && vote.questionId === questionId)) {
       throw httpError(409, "This player already submitted these posts.");
@@ -659,27 +681,16 @@ function adminVote(db, vote) {
 
 function buildLeaderboard(db) {
   const currentPlayers = Object.values(db.players).map((player) => {
-    const votes = db.votes.filter((vote) => vote.unix === player.unix).map((vote) => publicVote(db, vote));
+    const votes = db.votes
+      .filter((vote) => vote.unix === player.unix && isCurrentSeasonVote(db, vote))
+      .map((vote) => publicVote(db, vote));
     return {
       ...player,
       points: votes.reduce((total, vote) => total + vote.points, 0),
       finishedAt: latestAnsweredAt(votes),
     };
   });
-  const currentByName = new Map(currentPlayers.map((player) => [normalizeUsername(player.screenName), player]));
-  const imported = db.importedLeaders.map((leader) => {
-    const match = currentByName.get(normalizeUsername(leader.screenName));
-    if (!match) return leader;
-    currentByName.delete(normalizeUsername(leader.screenName));
-    return {
-      ...leader,
-      unix: match.unix,
-      realName: match.realName,
-      points: leader.points + match.points,
-      finishedAt: match.finishedAt,
-    };
-  });
-  const ranked = [...imported, ...currentByName.values()]
+  const ranked = currentPlayers
     .filter((leader) => leader.points > 0)
     .sort((a, b) => {
     if (b.points !== a.points) return b.points - a.points;
@@ -1201,6 +1212,32 @@ function isPosted(question) {
 
 function isRevealOver(question) {
   return Date.now() >= new Date(question.revealAt || question.deadlineAt).getTime();
+}
+
+function publicSettings(db) {
+  return {
+    ...db.settings,
+    currentSeasonId,
+    currentTerm: currentSeasonName,
+    secondsPerPhoto: currentSeasonTimerSeconds,
+    postsBatchSeconds: currentSeasonPostBatchSeconds,
+  };
+}
+
+function activePostQuestions(db) {
+  return (db.questions || [])
+    .filter((question) => isCurrentSeasonQuestion(question))
+    .filter((question) => isPosted(question))
+    .filter((question) => !isDeadlineOver(question));
+}
+
+function isCurrentSeasonVote(db, vote) {
+  const question = db.questions.find((item) => item.id === vote.questionId);
+  return Boolean(question && isCurrentSeasonQuestion(question));
+}
+
+function isCurrentSeasonQuestion(question) {
+  return question?.seasonId === currentSeasonId || String(question?.id || "").startsWith(`${currentSeasonId}-`);
 }
 
 function normalizeInstagram(value) {

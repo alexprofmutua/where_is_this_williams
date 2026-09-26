@@ -1,0 +1,36 @@
+[
+  {
+    "id": "fall-2026-weekend-series-2026-09-26-01",
+    "seasonId": "fall-2026-weekend-series",
+    "title": "Weekend 1 Photo 1",
+    "image": "assests/photos/weekend/fall-2026-weekend-01-td-bank.jpg",
+    "postedAt": "2026-09-26T00:00:00-04:00",
+    "bonusPoints": 0,
+    "deadlineAt": "2026-09-27T23:59:00-04:00",
+    "revealAt": "2026-09-28T12:00:00-04:00",
+    "answer": "TD Bank",
+    "options": [
+      "TD Bank",
+      "Williamstown Savings Bank",
+      "Images Cinema",
+      "Tunnel City Coffee"
+    ]
+  },
+  {
+    "id": "fall-2026-weekend-series-2026-09-26-02",
+    "seasonId": "fall-2026-weekend-series",
+    "title": "Weekend 1 Photo 2",
+    "image": "assests/photos/weekend/fall-2026-weekend-01-sawyer-library.jpg",
+    "postedAt": "2026-09-26T00:00:00-04:00",
+    "bonusPoints": 0,
+    "deadlineAt": "2026-09-27T23:59:00-04:00",
+    "revealAt": "2026-09-28T12:00:00-04:00",
+    "answer": "Sawyer Library",
+    "options": [
+      "Sawyer Library",
+      "Stetson Hall",
+      "Weston Hall",
+      "Griffin Hall"
+    ]
+  }
+]
