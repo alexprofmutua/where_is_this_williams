@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dbPath = path.join(__dirname, "data", "db.json");
 const seasonQuestionsPath = path.join(__dirname, "data", "season-questions.json");
+const podiumTermsPath = path.join(__dirname, "data", "podium-terms.json");
 const analyticsPath = path.join(__dirname, "data", "analytics.json");
 const rankingCsvPath = path.join(__dirname, "assests", "spring26-ranking.csv");
 const port = Number(process.env.PORT || 3000);
@@ -79,6 +80,7 @@ async function ensureDb() {
 async function readDb() {
   const db = JSON.parse(await readFile(dbPath, "utf8"));
   await mergeSeasonQuestions(db);
+  await mergePodiumTerms(db);
   if (isSupabaseConfigured()) await hydrateDbFromSupabase(db);
   return db;
 }
@@ -101,6 +103,11 @@ async function mergeSeasonQuestions(db) {
     ...(db.questions || []).filter((question) => !seasonQuestionIds.has(question.id)),
     ...seasonQuestions,
   ];
+}
+
+async function mergePodiumTerms(db) {
+  if (!existsSync(podiumTermsPath)) return;
+  db.termWinners = JSON.parse(await readFile(podiumTermsPath, "utf8"));
 }
 
 async function writeAnalytics(analytics) {
