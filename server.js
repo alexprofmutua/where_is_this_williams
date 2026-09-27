@@ -9,6 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dbPath = path.join(__dirname, "data", "db.json");
 const seasonQuestionsPath = path.join(__dirname, "data", "season-questions.json");
 const podiumTermsPath = path.join(__dirname, "data", "podium-terms.json");
+const springLeaderboardPath = path.join(__dirname, "data", "spring-2026-leaderboard.json");
 const analyticsPath = path.join(__dirname, "data", "analytics.json");
 const rankingCsvPath = path.join(__dirname, "assests", "spring26-ranking.csv");
 const port = Number(process.env.PORT || 3000);
@@ -451,7 +452,9 @@ async function handleApi(req, res, url) {
   }
 
   if (req.method === "GET" && url.pathname === "/api/leaderboard") {
-    sendJson(res, 200, { leaders: buildLeaderboard(db) });
+    const season = url.searchParams.get("season") || "current";
+    const leaders = season === "spring-2026" ? await readSpringLeaderboard() : buildLeaderboard(db);
+    sendJson(res, 200, { season, leaders });
     return;
   }
 
@@ -1143,6 +1146,11 @@ async function readRankingCsv() {
       scores: Object.fromEntries(scoreNames.map((name) => [name, Number(values[name] || 0)])),
     };
   });
+}
+
+async function readSpringLeaderboard() {
+  if (!existsSync(springLeaderboardPath)) return [];
+  return JSON.parse(await readFile(springLeaderboardPath, "utf8"));
 }
 
 function parseCsv(text) {

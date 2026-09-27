@@ -342,6 +342,32 @@ body.auth-pending .app-shell {
     max-width: 620px;
 }
 
+.leaderboard-season-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+.leaderboard-season-tab {
+    border: 1px solid rgba(255, 255, 255, 0.42);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.86rem;
+    font-weight: 900;
+    min-height: 38px;
+    padding: 8px 18px;
+}
+
+.leaderboard-season-tab.is-active {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: var(--purple);
+}
+
 .podium-page .page-panel h1 {
     font-size: clamp(1.25rem, 2.2vw, 1.7rem);
     line-height: 1.2;

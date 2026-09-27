@@ -64,6 +64,7 @@ const resultMessage = document.querySelector("#results-message");
 const historyList = document.querySelector("#history-list");
 const historyTableBody = document.querySelector("#history-table-body");
 const leaderboardList = document.querySelector("#leaderboard-list");
+const leaderboardSeasonTabs = document.querySelectorAll("[data-leaderboard-season]");
 const postsGrid = document.querySelector("#posts-grid");
 const postsSubmitButton = document.querySelector("#posts-submit-button");
 const postsSubmitStatus = document.querySelector("#posts-submit-status");
@@ -140,6 +141,9 @@ function bindEvents() {
   logoutButtons.forEach((button) => button.addEventListener("click", logoutPlayer));
   postsGrid?.addEventListener("click", selectPostOption);
   postsSubmitButton?.addEventListener("click", submitPostSelections);
+  leaderboardSeasonTabs.forEach((button) => {
+    button.addEventListener("click", () => setLeaderboardSeason(button.dataset.leaderboardSeason));
+  });
   achievementList?.addEventListener("click", showAchievementDetail);
   achievementList?.addEventListener("keydown", openAchievementDetailFromKeyboard);
   cheersList?.addEventListener("click", showAchievementDetail);
@@ -718,7 +722,9 @@ async function renderPageData() {
 
 async function renderLeaderboard() {
   if (!leaderboardList) return;
-  const { leaders } = await apiGet("/api/leaderboard");
+  const activeSeason = getActiveLeaderboardSeason();
+  const endpoint = activeSeason === "spring-2026" ? "/api/leaderboard?season=spring-2026" : "/api/leaderboard";
+  const { leaders } = await apiGet(endpoint);
 
   leaderboardList.innerHTML = leaders
     .map(
@@ -734,6 +740,19 @@ async function renderLeaderboard() {
       }
     )
     .join("") || `<tr><td colspan="3">Scores will appear here after the reveal.</td></tr>`;
+}
+
+function getActiveLeaderboardSeason() {
+  return document.querySelector("[data-leaderboard-season].is-active")?.dataset.leaderboardSeason || "current";
+}
+
+async function setLeaderboardSeason(season) {
+  leaderboardSeasonTabs.forEach((button) => {
+    const isActive = button.dataset.leaderboardSeason === season;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
+  });
+  await renderLeaderboard();
 }
 
 async function renderHistory() {
