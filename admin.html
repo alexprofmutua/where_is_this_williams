@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | Where is this Williams College</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="admin-page">
+    <header class="about-site">
+        <a href="achievements.html" class="site-logo" aria-label="Where is this Williams home">
+            <img src="assests/photos/williamscollegelogo.avif" alt="Williams College" />
+        </a>
+
+        <nav class="site-nav" aria-label="Main navigation">
+            <a href="achievements.html">Achievements</a>
+            <a href="posts.html">Posts</a>
+            <a href="leaderboard.html">Leaderboard</a>
+            <a href="history.html">History</a>
+            <a href="podium.html">Podium of champions</a>
+            <a href="index.html#about">About</a>
+        </nav>
+    </header>
+
+    <main class="admin-shell">
+        <section class="admin-hero">
+            <p class="eyebrow">Admin</p>
+            <h1>Williams voting dashboard</h1>
+            <p>Private view for responses, accuracy, player progress, and exports.</p>
+        </section>
+
+        <section class="admin-access-card">
+            <label for="admin-token">Admin token</label>
+            <div class="admin-token-row">
+                <input id="admin-token" type="password" autocomplete="off" placeholder="Enter admin token">
+                <button class="secondary-button" type="button" id="load-admin-dashboard-button">Open dashboard</button>
+            </div>
+            <p class="post-status" id="admin-dashboard-status" aria-live="polite"></p>
+        </section>
+
+        <section class="admin-private hidden">
+            <div class="admin-section-heading">
+                <div>
+                    <p class="eyebrow">Overview</p>
+                    <h2>Current weekend series</h2>
+                </div>
+                <button class="secondary-button" type="button" id="refresh-stats-button">Refresh</button>
+            </div>
+            <p class="post-status" id="stats-status" aria-live="polite"></p>
+            <div class="admin-stats-grid" id="admin-stats-grid"></div>
+        </section>
+
+        <section class="admin-private hidden">
+            <div class="admin-section-heading">
+                <div>
+                    <p class="eyebrow">Photos</p>
+                    <h2>Right and wrong breakdown</h2>
+                </div>
+            </div>
+            <div class="table-wrap admin-table-wrap">
+                <table class="history-table admin-question-table">
+                    <thead>
+                        <tr>
+                            <th>Photo</th>
+                            <th>Votes</th>
+                            <th>Right</th>
+                            <th>Wrong</th>
+                            <th>Accuracy</th>
+                            <th>Answer</th>
+                            <th>Option picks</th>
+                        </tr>
+                    </thead>
+                    <tbody id="question-stats-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="admin-private hidden">
+            <div class="admin-section-heading">
+                <div>
+                    <p class="eyebrow">Responses</p>
+                    <h2>Every submitted answer</h2>
+                </div>
+                <div class="admin-actions">
+                    <button class="secondary-button" type="button" id="refresh-responses-button">Refresh</button>
+                    <button class="secondary-button" type="button" id="download-responses-button">Export CSV</button>
+                    <button class="secondary-button" type="button" id="download-live-json-button">Export JSON</button>
+                </div>
+            </div>
+            <p class="post-status" id="responses-status" aria-live="polite"></p>
+            <div class="table-wrap admin-table-wrap">
+                <table class="history-table admin-responses-table">
+                    <thead>
+                        <tr>
+                            <th>Instagram</th>
+                            <th>Email</th>
+                            <th>Photo</th>
+                            <th>Choice</th>
+                            <th>Correct</th>
+                            <th>Result</th>
+                            <th>Points</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-responses-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="admin-private hidden">
+            <div class="admin-section-heading">
+                <div>
+                    <p class="eyebrow">Leaderboard</p>
+                    <h2>Current player scores</h2>
+                </div>
+                <button class="secondary-button" type="button" id="refresh-admin-leaderboard-button">Refresh</button>
+            </div>
+            <p class="post-status" id="admin-leaderboard-status" aria-live="polite"></p>
+            <div class="table-wrap admin-table-wrap">
+                <table class="history-table admin-leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Instagram</th>
+                            <th>Email</th>
+                            <th>Score</th>
+                            <th>Votes</th>
+                            <th>Correct</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-leaderboard-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="admin-private hidden">
+            <div class="admin-section-heading">
+                <div>
+                    <p class="eyebrow">Suggestions</p>
+                    <h2>Player comments</h2>
+                </div>
+            </div>
+            <div class="table-wrap admin-table-wrap">
+                <table class="history-table admin-suggestions-table">
+                    <thead>
+                        <tr>
+                            <th>Instagram</th>
+                            <th>Suggestion</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-suggestions-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="admin-private hidden" id="admin-player-detail">
+            <div class="admin-section-heading">
+                <div>
+                    <p class="eyebrow">Player lookup</p>
+                    <h2 id="admin-player-detail-title">Find a player</h2>
+                    <p id="admin-player-detail-copy">Search by Williams email, unix, or Instagram.</p>
+                </div>
+            </div>
+            <div class="admin-lookup-row">
+                <label for="admin-player-lookup">
+                    Player
+                    <input id="admin-player-lookup" type="text" placeholder="alem_prof or amm22@williams.edu">
+                </label>
+                <button class="secondary-button" type="button" id="load-player-achievements-button">Load player</button>
+            </div>
+            <p class="post-status" id="player-achievements-status" aria-live="polite"></p>
+            <div class="hidden" id="admin-collection-panel">
+                <p id="admin-player-meta"></p>
+                <div class="admin-stats-grid" id="admin-player-summary"></div>
+                <div class="table-wrap admin-table-wrap">
+                    <table class="history-table admin-player-history-table">
+                        <thead>
+                            <tr>
+                                <th>Photo</th>
+                                <th>Guess</th>
+                                <th>Correct location</th>
+                                <th>Result</th>
+                                <th>Points</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-player-history-body"></tbody>
+                    </table>
+                </div>
+                <h3 id="admin-achievement-count">Achievements</h3>
+                <div class="achievements-grid" id="admin-achievement-list"></div>
+                <h3 id="admin-cheers-count">Cheers</h3>
+                <div class="achievements-grid" id="admin-cheers-list"></div>
+            </div>
+        </section>
+    </main>
+
+    <script src="admin.js"></script>
+</body>
+</html>

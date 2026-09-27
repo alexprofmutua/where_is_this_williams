@@ -485,6 +485,23 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (req.method === "GET" && url.pathname === "/api/admin/responses") {
+    requireAdmin(req);
+    sendJson(res, 200, { responses: buildAdminResponses(db) });
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/admin/export-responses") {
+    requireAdmin(req);
+    const csv = buildAdminResponsesCsv(db);
+    res.writeHead(200, {
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename="where-is-this-williams-responses-${new Date().toISOString().slice(0, 10)}.csv"`,
+    });
+    res.end(csv);
+    return;
+  }
+
   if (req.method === "GET" && url.pathname === "/api/admin/leaderboard") {
     requireAdmin(req);
     sendJson(res, 200, { leaders: buildAdminLeaderboard(db) });
@@ -729,7 +746,7 @@ function buildAdminLeaderboard(db) {
   });
 
   const ranked = [...playerEntries.values()].map((player) => {
-    const votes = (db.votes || []).filter((vote) => vote.unix === player.unix).map((vote) => adminVote(db, vote));
+    const votes = (db.votes || []).filter((vote) => vote.unix === player.unix && isCurrentSeasonVote(db, vote)).map((vote) => adminVote(db, vote));
     return {
       unix: player.unix,
       email: player.email,
@@ -877,21 +894,138 @@ async function buildAdminStats(db) {
   const players = Object.values(db.players || {});
   const votes = db.votes || [];
   const referrals = players.filter((player) => player.referredBy).length;
+  const currentQuestions = activeSeasonQuestions(db);
+  const currentQuestionIds = new Set(currentQuestions.map((question) => question.id));
+  const currentVotes = votes.filter((vote) => currentQuestionIds.has(vote.questionId));
+  const currentLocationQuestions = currentQuestions.filter((question) => question.kind !== "feedback");
+  const currentLocationQuestionIds = new Set(currentLocationQuestions.map((question) => question.id));
+  const currentLocationVotes = currentVotes.filter((vote) => currentLocationQuestionIds.has(vote.questionId));
+  const votesByPlayer = groupBy(currentLocationVotes, (vote) => vote.unix);
+  const completedPlayers = [...votesByPlayer.values()].filter((playerVotes) => {
+    const answeredIds = new Set(playerVotes.map((vote) => vote.questionId));
+    return currentLocationQuestions.length > 0 && currentLocationQuestions.every((question) => answeredIds.has(question.id));
+  }).length;
+  const adminVotes = currentVotes.map((vote) => adminVote(db, vote));
+  const correctVotes = adminVotes.filter((vote) => vote.correct && vote.correctAnswer).length;
+  const wrongVotes = adminVotes.filter((vote) => !vote.correct && vote.correctAnswer).length;
   const pageVisits = Object.entries(analytics.pages || {})
     .map(([page, visits]) => ({ page, visits }))
     .sort((a, b) => b.visits - a.visits);
 
   return {
+    season: currentSeasonName,
     totalVisits: analytics.totalVisits || 0,
     uniqueVisitors: Object.keys(analytics.visitors || {}).length,
     players: players.length,
-    votes: votes.length,
-    uniqueVoters: new Set(votes.map((vote) => vote.unix)).size,
+    votes: currentVotes.length,
+    allTimeVotes: votes.length,
+    uniqueVoters: new Set(currentVotes.map((vote) => vote.unix)).size,
+    completedPlayers,
+    correctVotes,
+    wrongVotes,
+    accuracy: correctVotes + wrongVotes ? Math.round((correctVotes / (correctVotes + wrongVotes)) * 100) : 0,
     referrals,
+    questionStats: buildQuestionStats(db),
+    suggestions: buildAdminSuggestions(db),
     pageVisits,
     recentVisits: analytics.recentVisits || [],
     updatedAt: new Date().toISOString(),
   };
+}
+
+function buildQuestionStats(db) {
+  return activeSeasonQuestions(db).map((question) => {
+    const votes = (db.votes || []).filter((vote) => vote.questionId === question.id);
+    const answerCounts = Object.fromEntries((question.options || []).map((option) => [option, 0]));
+    for (const vote of votes) {
+      answerCounts[vote.choice] = (answerCounts[vote.choice] || 0) + 1;
+    }
+    const correct = question.kind === "feedback" ? 0 : votes.filter((vote) => vote.choice === question.answer).length;
+    const wrong = question.kind === "feedback" ? 0 : Math.max(0, votes.length - correct);
+    return {
+      id: question.id,
+      title: question.title,
+      answer: question.kind === "feedback" ? "" : question.answer,
+      total: votes.length,
+      correct,
+      wrong,
+      accuracy: correct + wrong ? Math.round((correct / (correct + wrong)) * 100) : 0,
+      answerCounts,
+    };
+  });
+}
+
+function buildAdminSuggestions(db) {
+  return (db.votes || [])
+    .filter((vote) => String(vote.feedbackText || "").trim())
+    .map((vote) => {
+      const player = db.players[vote.unix] || {};
+      return {
+        instagram: player.instagram || player.screenName || vote.unix,
+        email: player.email || "",
+        text: vote.feedbackText,
+        answeredAt: vote.answeredAt,
+      };
+    })
+    .sort((a, b) => String(b.answeredAt).localeCompare(String(a.answeredAt)));
+}
+
+function buildAdminResponses(db) {
+  return (db.votes || [])
+    .filter((vote) => isCurrentSeasonVote(db, vote))
+    .map((vote) => {
+      const player = db.players[vote.unix] || {};
+      const question = db.questions.find((item) => item.id === vote.questionId) || {};
+      const result = adminVote(db, vote);
+      return {
+        instagram: player.instagram || player.screenName || vote.unix,
+        email: player.email || "",
+        unix: vote.unix,
+        questionId: vote.questionId,
+        title: question.title || vote.title,
+        choice: vote.choice,
+        correctAnswer: result.correctAnswer || "",
+        correct: Boolean(result.correct),
+        points: result.points,
+        feedbackText: vote.feedbackText || "",
+        answeredAt: vote.answeredAt,
+      };
+    })
+    .sort((a, b) => String(b.answeredAt).localeCompare(String(a.answeredAt)));
+}
+
+function buildAdminResponsesCsv(db) {
+  const headers = ["instagram", "email", "question", "choice", "correct_answer", "result", "points", "suggestion", "answered_at"];
+  const rows = buildAdminResponses(db).map((response) => [
+    response.instagram,
+    response.email,
+    response.title,
+    response.choice,
+    response.correctAnswer,
+    response.correct ? "right" : "wrong",
+    response.points,
+    response.feedbackText,
+    response.answeredAt,
+  ]);
+  return `${[headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\n")}\n`;
+}
+
+function activeSeasonQuestions(db) {
+  return (db.questions || []).filter((question) => isCurrentSeasonQuestion(question));
+}
+
+function groupBy(items, keyFn) {
+  const groups = new Map();
+  for (const item of items) {
+    const key = keyFn(item);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(item);
+  }
+  return groups;
+}
+
+function csvCell(value) {
+  return `"${String(value ?? "").replaceAll("\"", "\"\"")}"`;
 }
 
 function ensureAnalytics(db) {

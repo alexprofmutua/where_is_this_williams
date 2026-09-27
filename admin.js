@@ -11,7 +11,13 @@ const leaderboardBody = document.querySelector("#admin-leaderboard-body");
 const refreshStatsButton = document.querySelector("#refresh-stats-button");
 const statsStatus = document.querySelector("#stats-status");
 const adminStatsGrid = document.querySelector("#admin-stats-grid");
+const questionStatsBody = document.querySelector("#question-stats-body");
+const suggestionsBody = document.querySelector("#admin-suggestions-body");
 const pageStatsBody = document.querySelector("#page-stats-body");
+const refreshResponsesButton = document.querySelector("#refresh-responses-button");
+const responsesStatus = document.querySelector("#responses-status");
+const responsesBody = document.querySelector("#admin-responses-body");
+const downloadResponsesButton = document.querySelector("#download-responses-button");
 const refreshPodiumButton = document.querySelector("#refresh-admin-podium-button");
 const podiumStatus = document.querySelector("#admin-podium-status");
 const currentTopGrid = document.querySelector("#admin-current-top");
@@ -32,9 +38,10 @@ const adminPrivatePanels = document.querySelectorAll(".admin-private");
 
 initAdminAccess();
 
-form.addEventListener("submit", saveQuestion);
+form?.addEventListener("submit", saveQuestion);
 loadDashboardButton?.addEventListener("click", loadDashboard);
 downloadLiveJsonButton?.addEventListener("click", downloadLiveJson);
+downloadResponsesButton?.addEventListener("click", downloadResponsesCsv);
 adminTokenInput?.addEventListener("input", () => {
   const token = getAdminToken();
   if (token) localStorage.setItem(ADMIN_TOKEN_KEY, token);
@@ -42,6 +49,7 @@ adminTokenInput?.addEventListener("input", () => {
 });
 refreshLeaderboardButton?.addEventListener("click", loadAdminLeaderboard);
 refreshStatsButton?.addEventListener("click", loadAdminStats);
+refreshResponsesButton?.addEventListener("click", loadAdminResponses);
 refreshPodiumButton?.addEventListener("click", loadAdminPodium);
 loadPlayerAchievementsButton?.addEventListener("click", () => {
   const lookup = document.querySelector("#admin-player-lookup").value.trim();
@@ -122,7 +130,7 @@ async function loadDashboard() {
     await adminFetch("/api/admin/questions");
     setAdminUnlocked(true);
     dashboardStatus.textContent = "Loading admin dashboard...";
-    await Promise.allSettled([loadAdminLeaderboard(), loadAdminStats(), loadAdminPodium()]);
+    await Promise.allSettled([loadAdminLeaderboard(), loadAdminStats(), loadAdminResponses(), loadAdminPodium()]);
     dashboardStatus.textContent = "Dashboard loaded.";
   } catch (error) {
     setAdminUnlocked(false);
@@ -177,8 +185,12 @@ function renderAdminStats(stats) {
     ["Total site visits", stats.totalVisits],
     ["Unique visitors total", stats.uniqueVisitors],
     ["Players", stats.players],
-    ["Votes", stats.votes],
+    ["Current votes", stats.votes],
     ["Unique voters", stats.uniqueVoters],
+    ["Completed all photos", stats.completedPlayers],
+    ["Right answers", stats.correctVotes],
+    ["Wrong answers", stats.wrongVotes],
+    ["Accuracy", `${stats.accuracy}%`],
     ["Referrals", stats.referrals],
   ];
 
@@ -192,9 +204,94 @@ function renderAdminStats(stats) {
   pageStatsBody.innerHTML = stats.pageVisits.length
     ? stats.pageVisits.map((item) => `<tr><td>${escapeHtml(item.page)}</td><td>${item.visits}</td></tr>`).join("")
     : `<tr><td colspan="2">No page visits recorded yet.</td></tr>`;
+
+  if (questionStatsBody) {
+    questionStatsBody.innerHTML = stats.questionStats.length
+      ? stats.questionStats.map((item) => {
+          const answerCounts = Object.entries(item.answerCounts || {})
+            .map(([answer, count]) => `${escapeHtml(answer)}: ${count}`)
+            .join("<br>");
+          return `
+            <tr>
+              <td>${escapeHtml(item.title)}</td>
+              <td>${item.total}</td>
+              <td>${item.correct}</td>
+              <td>${item.wrong}</td>
+              <td>${item.accuracy}%</td>
+              <td>${escapeHtml(item.answer || "Suggestion")}</td>
+              <td>${answerCounts || "No answers yet"}</td>
+            </tr>
+          `;
+        }).join("")
+      : `<tr><td colspan="7">No current questions found.</td></tr>`;
+  }
+
+  if (suggestionsBody) {
+    suggestionsBody.innerHTML = stats.suggestions.length
+      ? stats.suggestions.map((item) => `
+          <tr>
+            <td>@${escapeHtml(item.instagram)}</td>
+            <td>${escapeHtml(item.text)}</td>
+            <td>${formatDate(item.answeredAt)}</td>
+          </tr>
+        `).join("")
+      : `<tr><td colspan="3">No suggestions yet.</td></tr>`;
+  }
+}
+
+async function loadAdminResponses() {
+  try {
+    if (!responsesBody) return;
+    responsesStatus.textContent = "Loading responses...";
+    const { responses } = await adminFetch("/api/admin/responses");
+    responsesBody.innerHTML = responses.length
+      ? responses.map((response) => `
+          <tr>
+            <td>@${escapeHtml(response.instagram)}</td>
+            <td>${escapeHtml(response.email)}</td>
+            <td>${escapeHtml(response.title)}</td>
+            <td>${escapeHtml(response.choice)}</td>
+            <td>${escapeHtml(response.correctAnswer || "Suggestion")}</td>
+            <td>${response.correct ? "Right" : "Wrong"}</td>
+            <td>${response.points}</td>
+            <td>${formatDate(response.answeredAt)}</td>
+          </tr>
+        `).join("")
+      : `<tr><td colspan="8">No current responses yet.</td></tr>`;
+    responsesStatus.textContent = `${responses.length} responses loaded.`;
+  } catch (error) {
+    responsesStatus.textContent = error.message;
+  }
+}
+
+async function downloadResponsesCsv() {
+  try {
+    if (!getAdminToken()) throw new Error("Enter your admin token first.");
+    responsesStatus.textContent = "Preparing CSV download...";
+    const response = await fetch("/api/admin/export-responses", {
+      headers: { "x-admin-token": getAdminToken() },
+    });
+    if (!response.ok) {
+      const payload = await response.json();
+      throw new Error(payload.error || "Download failed.");
+    }
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `where-is-this-williams-responses-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    responsesStatus.textContent = "Responses CSV downloaded.";
+  } catch (error) {
+    responsesStatus.textContent = error.message;
+  }
 }
 
 async function loadAdminPodium() {
+  if (!podiumStatus || !currentTopGrid || !podiumGallery) return;
   try {
     podiumStatus.textContent = "Loading podium...";
     const { terms, currentTop } = await adminFetch("/api/admin/podium");

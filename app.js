@@ -111,6 +111,7 @@ async function init() {
     return;
   }
   document.body.classList.remove("auth-pending");
+  syncAdminNav();
   syncPlayerView();
   syncReminderState();
   scheduleVoteReminder();
@@ -406,6 +407,16 @@ async function saveVerifiedProfile() {
 
 function isAdminProfile(player) {
   return player.email === ADMIN_EMAIL && normalizeInstagram(player.instagram || player.screenName) === ADMIN_INSTAGRAM;
+}
+
+function syncAdminNav() {
+  const nav = document.querySelector(".site-nav");
+  if (!nav || !activePlayer || !isAdminProfile(activePlayer) || nav.querySelector("[data-admin-nav]")) return;
+  const adminLink = document.createElement("a");
+  adminLink.href = "admin.html";
+  adminLink.dataset.adminNav = "true";
+  adminLink.textContent = "Admin";
+  nav.insertBefore(adminLink, nav.querySelector(".audio-toggle") || nav.querySelector(".nav-logout") || null);
 }
 
 function isHomePage() {

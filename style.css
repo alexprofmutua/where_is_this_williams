@@ -773,6 +773,90 @@ body.auth-pending .app-shell {
     min-width: 420px;
 }
 
+.admin-page {
+    background: var(--purple);
+    place-items: start center;
+    align-content: start;
+}
+
+.admin-shell {
+    width: min(1280px, calc(100% - 40px));
+    display: grid;
+    gap: 24px;
+    margin: 0 auto 80px;
+}
+
+.admin-hero,
+.admin-access-card,
+.admin-private {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 8px;
+    padding: clamp(18px, 3vw, 28px);
+}
+
+.admin-hero h1,
+.admin-section-heading h2 {
+    color: white;
+}
+
+.admin-hero p,
+.admin-section-heading p,
+#admin-player-meta {
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.admin-access-card label {
+    display: block;
+    margin-bottom: 8px;
+    color: white;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.admin-token-row,
+.admin-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+}
+
+.admin-token-row input {
+    width: min(100%, 420px);
+    min-height: 44px;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font: inherit;
+}
+
+.admin-section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.admin-table-wrap {
+    overflow-x: auto;
+}
+
+.admin-page .history-table {
+    min-width: 760px;
+    background: rgba(255, 255, 255, 0.96);
+    border-radius: 8px;
+}
+
+.admin-page .history-table th {
+    color: var(--purple);
+}
+
+.admin-page .history-table td {
+    color: var(--ink);
+}
+
 .clickable-row {
     cursor: pointer;
 }
