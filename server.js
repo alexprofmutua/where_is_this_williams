@@ -491,6 +491,28 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (req.method === "POST" && url.pathname === "/api/admin/test-player") {
+    requireAdmin(req);
+    const body = await readJson(req);
+    const player = normalizePlayer(body);
+    const existingPlayer = db.players[player.unix];
+    assertInstagramAvailable(db, player.unix, player.instagram);
+    if (existingPlayer && (existingPlayer.instagram || existingPlayer.screenName) !== player.instagram) {
+      throw httpError(409, "This Williams email is already registered. Use the same Instagram or choose another test email.");
+    }
+    db.players[player.unix] = {
+      ...existingPlayer,
+      ...player,
+      avatar: player.avatar || existingPlayer?.avatar || "💜",
+      avatarImage: player.avatarImage === null ? undefined : player.avatarImage ?? existingPlayer?.avatarImage,
+      verified: true,
+      testPlayer: true,
+    };
+    await writeDb(db);
+    sendJson(res, 200, { player: publicPlayer(db.players[player.unix]), created: !existingPlayer });
+    return;
+  }
+
   if (req.method === "GET" && url.pathname === "/api/admin/export-responses") {
     requireAdmin(req);
     const csv = buildAdminResponsesCsv(db);
@@ -707,7 +729,7 @@ function adminVote(db, vote) {
 }
 
 function buildLeaderboard(db) {
-  const currentPlayers = Object.values(db.players).map((player) => {
+  const currentPlayers = Object.values(db.players).filter((player) => !player.testPlayer).map((player) => {
     const votes = db.votes
       .filter((vote) => vote.unix === player.unix && isCurrentSeasonVote(db, vote))
       .map((vote) => publicVote(db, vote));
@@ -734,8 +756,9 @@ function buildLeaderboard(db) {
 }
 
 function buildAdminLeaderboard(db) {
-  const playerEntries = new Map(Object.values(db.players || {}).map((player) => [player.unix, player]));
+  const playerEntries = new Map(Object.values(db.players || {}).filter((player) => !player.testPlayer).map((player) => [player.unix, player]));
   (db.votes || []).forEach((vote) => {
+    if (db.players[vote.unix]?.testPlayer) return;
     if (playerEntries.has(vote.unix)) return;
     playerEntries.set(vote.unix, {
       unix: vote.unix,
@@ -896,7 +919,7 @@ async function buildAdminStats(db) {
   const referrals = players.filter((player) => player.referredBy).length;
   const currentQuestions = activeSeasonQuestions(db);
   const currentQuestionIds = new Set(currentQuestions.map((question) => question.id));
-  const currentVotes = votes.filter((vote) => currentQuestionIds.has(vote.questionId));
+  const currentVotes = votes.filter((vote) => currentQuestionIds.has(vote.questionId) && !db.players[vote.unix]?.testPlayer);
   const currentLocationQuestions = currentQuestions.filter((question) => question.kind !== "feedback");
   const currentLocationQuestionIds = new Set(currentLocationQuestions.map((question) => question.id));
   const currentLocationVotes = currentVotes.filter((vote) => currentLocationQuestionIds.has(vote.questionId));
@@ -916,7 +939,8 @@ async function buildAdminStats(db) {
     season: currentSeasonName,
     totalVisits: analytics.totalVisits || 0,
     uniqueVisitors: Object.keys(analytics.visitors || {}).length,
-    players: players.length,
+    players: players.filter((player) => !player.testPlayer).length,
+    testPlayers: players.filter((player) => player.testPlayer).length,
     votes: currentVotes.length,
     allTimeVotes: votes.length,
     uniqueVoters: new Set(currentVotes.map((vote) => vote.unix)).size,
@@ -935,7 +959,7 @@ async function buildAdminStats(db) {
 
 function buildQuestionStats(db) {
   return activeSeasonQuestions(db).map((question) => {
-    const votes = (db.votes || []).filter((vote) => vote.questionId === question.id);
+    const votes = (db.votes || []).filter((vote) => vote.questionId === question.id && !db.players[vote.unix]?.testPlayer);
     const answerCounts = Object.fromEntries((question.options || []).map((option) => [option, 0]));
     for (const vote of votes) {
       answerCounts[vote.choice] = (answerCounts[vote.choice] || 0) + 1;
@@ -957,7 +981,7 @@ function buildQuestionStats(db) {
 
 function buildAdminSuggestions(db) {
   return (db.votes || [])
-    .filter((vote) => String(vote.feedbackText || "").trim())
+    .filter((vote) => String(vote.feedbackText || "").trim() && !db.players[vote.unix]?.testPlayer)
     .map((vote) => {
       const player = db.players[vote.unix] || {};
       return {
@@ -972,7 +996,7 @@ function buildAdminSuggestions(db) {
 
 function buildAdminResponses(db) {
   return (db.votes || [])
-    .filter((vote) => isCurrentSeasonVote(db, vote))
+    .filter((vote) => isCurrentSeasonVote(db, vote) && !db.players[vote.unix]?.testPlayer)
     .map((vote) => {
       const player = db.players[vote.unix] || {};
       const question = db.questions.find((item) => item.id === vote.questionId) || {};
@@ -1238,6 +1262,7 @@ function publicPlayer(player) {
     avatar: player.avatar,
     avatarImage: player.avatarImage,
     verified: Boolean(player.verified),
+    testPlayer: Boolean(player.testPlayer),
   };
 }
 

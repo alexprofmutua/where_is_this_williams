@@ -874,6 +874,33 @@ body.auth-pending .app-shell {
     margin-top: 18px;
 }
 
+.admin-test-player-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+    gap: 12px;
+    align-items: end;
+}
+
+.admin-test-player-form label {
+    display: grid;
+    gap: 6px;
+    color: white;
+    font-size: 0.82rem;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.admin-test-player-form input {
+    width: 100%;
+    min-height: 44px;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--ink);
+    font: inherit;
+    text-transform: none;
+}
+
 .admin-lookup-row label {
     display: grid;
     gap: 6px;

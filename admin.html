@@ -53,6 +53,28 @@
         <section class="admin-private hidden">
             <div class="admin-section-heading">
                 <div>
+                    <p class="eyebrow">Test mode</p>
+                    <h2>Preview the player experience</h2>
+                    <p>Creates a marked test account, then opens the posts page as that player.</p>
+                </div>
+            </div>
+            <form class="admin-test-player-form" id="admin-test-player-form">
+                <label for="admin-test-player-email">
+                    Test Williams email
+                    <input id="admin-test-player-email" type="email" value="abc123@williams.edu" required>
+                </label>
+                <label for="admin-test-player-instagram">
+                    Test Instagram username
+                    <input id="admin-test-player-instagram" type="text" value="testing1" required>
+                </label>
+                <button class="secondary-button" type="submit">Enter as test player</button>
+            </form>
+            <p class="post-status" id="admin-test-player-status" aria-live="polite"></p>
+        </section>
+
+        <section class="admin-private hidden">
+            <div class="admin-section-heading">
+                <div>
                     <p class="eyebrow">Photos</p>
                     <h2>Right and wrong breakdown</h2>
                 </div>

@@ -18,6 +18,10 @@ const refreshResponsesButton = document.querySelector("#refresh-responses-button
 const responsesStatus = document.querySelector("#responses-status");
 const responsesBody = document.querySelector("#admin-responses-body");
 const downloadResponsesButton = document.querySelector("#download-responses-button");
+const testPlayerForm = document.querySelector("#admin-test-player-form");
+const testPlayerStatus = document.querySelector("#admin-test-player-status");
+const testPlayerEmailInput = document.querySelector("#admin-test-player-email");
+const testPlayerInstagramInput = document.querySelector("#admin-test-player-instagram");
 const refreshPodiumButton = document.querySelector("#refresh-admin-podium-button");
 const podiumStatus = document.querySelector("#admin-podium-status");
 const currentTopGrid = document.querySelector("#admin-current-top");
@@ -39,6 +43,7 @@ const adminPrivatePanels = document.querySelectorAll(".admin-private");
 initAdminAccess();
 
 form?.addEventListener("submit", saveQuestion);
+testPlayerForm?.addEventListener("submit", createTestPlayer);
 loadDashboardButton?.addEventListener("click", loadDashboard);
 downloadLiveJsonButton?.addEventListener("click", downloadLiveJson);
 downloadResponsesButton?.addEventListener("click", downloadResponsesCsv);
@@ -185,6 +190,7 @@ function renderAdminStats(stats) {
     ["Total site visits", stats.totalVisits],
     ["Unique visitors total", stats.uniqueVisitors],
     ["Players", stats.players],
+    ["Test players", stats.testPlayers],
     ["Current votes", stats.votes],
     ["Unique voters", stats.uniqueVoters],
     ["Completed all photos", stats.completedPlayers],
@@ -236,6 +242,29 @@ function renderAdminStats(stats) {
           </tr>
         `).join("")
       : `<tr><td colspan="3">No suggestions yet.</td></tr>`;
+  }
+}
+
+async function createTestPlayer(event) {
+  event.preventDefault();
+  try {
+    if (!getAdminToken()) throw new Error("Enter your admin token first.");
+    testPlayerStatus.textContent = "Preparing test player...";
+    const { player } = await adminFetch("/api/admin/test-player", {
+      method: "POST",
+      body: JSON.stringify({
+        email: testPlayerEmailInput.value.trim(),
+        instagram: testPlayerInstagramInput.value.trim(),
+      }),
+    });
+    localStorage.setItem("where-is-this-williams-active-unix", player.unix);
+    localStorage.removeItem("where-is-this-williams-auth-token");
+    testPlayerStatus.textContent = `Entering as @${player.instagram}. Test scores are hidden from the public leaderboard.`;
+    window.setTimeout(() => {
+      window.location.href = "posts.html";
+    }, 500);
+  } catch (error) {
+    testPlayerStatus.textContent = error.message;
   }
 }
 
