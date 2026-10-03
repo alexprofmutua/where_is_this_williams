@@ -20,7 +20,7 @@ const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || "";
 const currentSeasonId = "fall-2026-weekend-series";
 const currentSeasonName = "Fall 2026 Weekend Series";
 const currentSeasonTimerSeconds = 15;
-const currentSeasonPostBatchSeconds = 30;
+const currentSeasonPostBatchSeconds = 15;
 
 const mimeTypes = {
   ".avif": "image/avif",
