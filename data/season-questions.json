@@ -49,5 +49,22 @@
       "Weston Hall",
       "Mission"
     ]
+  },
+  {
+    "id": "fall-2026-weekend-series-2026-10-10-01",
+    "seasonId": "fall-2026-weekend-series",
+    "title": "Weekend 3 Photo 1",
+    "image": "assests/photos/weekend/fall-2026-weekend-03-alumni-center.jpg",
+    "postedAt": "2026-10-10T00:00:00-04:00",
+    "bonusPoints": 0,
+    "deadlineAt": "2026-10-11T23:59:00-04:00",
+    "revealAt": "2026-10-12T00:00:00-04:00",
+    "answer": "Alumni Center",
+    "options": [
+      "Alumni Center",
+      "Weston Hall",
+      "Mission Park",
+      "Mears House"
+    ]
   }
 ]
